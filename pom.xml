@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>cloud.quinimbus</groupId>
+    <artifactId>persistence</artifactId>
+    <version>0.1-SNAPSHOT</version>
+    <name>QuiNimbus Persistence Parent</name>
+    <packaging>pom</packaging>
+    
+    <modules>
+        <module>modules/api</module>
+        <module>modules/common</module>
+        <module>modules/core</module>
+        <module>modules/repositories</module>
+        <module>modules/cdi</module>
+        <module>modules/mongo</module>
+        <module>modules/test-base</module>
+    </modules>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+    
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>cloud.quinimbus</groupId>
+                <artifactId>bom</artifactId>
+                <version>0.1-SNAPSHOT</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.20</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <repositories>
+        <repository>
+            <id>quinimbus-releases</id>
+            <name>Quinimbus Releases</name>
+            <url>https://repo.quinimbus.cloud/releases</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>quinimbus-snapshots</id>
+            <name>Quinimbus Snapshots</name>
+            <url>https://repo.quinimbus.cloud/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
+    
+    <distributionManagement>
+        <repository>
+            <id>quinimbus-releases</id>
+            <name>Quinimbus Releases</name>
+            <url>https://repo.quinimbus.cloud/releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>quinimbus-snapshots</id>
+            <name>Quinimbus Snapshots</name>
+            <url>https://repo.quinimbus.cloud/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+</project>

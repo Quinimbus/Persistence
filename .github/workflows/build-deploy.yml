@@ -1,0 +1,31 @@
+name: build-deploy
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.7.0
+        with:
+          mongodb-version: 5.0
+          mongodb-username: mongoroot
+          mongodb-password: mongorootpassword
+      - uses: actions/checkout@v2
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      - name: Build with Maven
+        run: mvn --batch-mode --update-snapshots verify
+      - name: Deploy package to repository
+        env:
+          REPOUSER: ${{ secrets.repouser }}
+          REPOPASS: ${{ secrets.repopass }}
+        run: |
+          mkdir -p ~/.m2
+          echo "<settings><servers><server><id>quinimbus-snapshots</id><username>\${env.REPOUSER}</username><password>\${env.REPOPASS}</password></server><server><id>quinimbus-releases</id><username>\${env.REPOUSER}</username><password>\${env.REPOPASS}</password></server></servers></settings>" > ~/.m2/settings.xml
+          mvn -DskipTests deploy

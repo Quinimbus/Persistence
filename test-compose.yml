@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: "mongo:5.0.2"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoroot
+      MONGO_INITDB_ROOT_PASSWORD: mongorootpassword
+    ports:
+      - 27017:27017
+    volumes:
+      - "mongodata:/mongo/db"
+
+volumes:
+  mongodata:

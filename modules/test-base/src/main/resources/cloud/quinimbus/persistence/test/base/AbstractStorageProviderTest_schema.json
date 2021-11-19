@@ -1,0 +1,45 @@
+{
+    "id": "blog",
+    "version": 1,
+    "entityTypes": {
+        "entry": {
+            "properties": {
+                "title": {
+                    "type": "STRING"
+                },
+                "published": {
+                    "type": "BOOLEAN"
+                },
+                "created": {
+                    "type": "TIMESTAMP"
+                },
+                "category": {
+                    "type": {
+                        "ENUM": ["POLITICS", "SPORTS"]
+                    }
+                },
+                "readcount": {
+                    "type": "INTEGER"
+                },
+                "tags": {
+                    "type": "STRING",
+                    "structure": "LIST"
+                },
+                "author": {
+                    "type": {
+                        "EMBEDDED": {
+                            "properties": {
+                                "name": {
+                                    "type": "STRING"
+                                },
+                                "subtext": {
+                                    "type": "STRING"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "id": "blog",
+    "version": 1,
+    "entityTypes": {
+        "entry": {
+            "properties": {
+                "title": {
+                    "type": "STRING"
+                },
+                "created": {
+                    "type": "TIMESTAMP"
+                },
+                "published": {
+                    "type": "BOOLEAN"
+                },
+                "category": {
+                    "type": {
+                        "ENUM": ["POLITICS", "SPORTS"]
+                    }
+                },
+                "tags": {
+                    "type": "STRING",
+                    "structure": "LIST"
+                }
+            }
+        }
+    }
+}
