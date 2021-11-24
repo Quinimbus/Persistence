@@ -9,6 +9,7 @@ import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 import cloud.quinimbus.persistence.schema.json.SingleJsonSchemaProvider;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,8 +56,8 @@ public class JsonSchemaProviderTest {
                                 .build()))
                 .build();
         var provider = new SingleJsonSchemaProvider();
-        provider.importSchema(this.getClass().getResourceAsStream("JsonSchemaProviderTest_schema.json"));
-        System.out.println(provider.getSchemas());
-        Assertions.assertEquals(schema, provider.getSchemas().stream().findFirst().get());
+        var importedSchema = provider.importSchema(new InputStreamReader(this.getClass().getResourceAsStream("JsonSchemaProviderTest_schema.json")));
+        System.out.println(importedSchema);
+        Assertions.assertEquals(schema, importedSchema);
     }
 }

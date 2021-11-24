@@ -4,7 +4,6 @@ import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.EntityTypePropertyType;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
-import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
@@ -25,7 +24,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -37,17 +35,6 @@ import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaProvider {
     
     public static record EntityTypeMixin(@JsonIgnore Set<EntityTypeProperty> properties) {}
-
-    private final Map<String, Schema> schemas;
-
-    public AbstractJsonSchemaProvider() {
-        this.schemas = new LinkedHashMap<>();
-    }
-
-    @Override
-    public Set<Schema> getSchemas() {
-        return Set.copyOf(schemas.values());
-    }
 
     protected Map<String, EntityType> importTypes(ObjectMapper mapper, JsonNode node) throws IOException {
         return ThrowingStream
@@ -120,9 +107,5 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
             property = property.withStructure(EntityTypeProperty.Structure.SINGLE);
         }
         return property;
-    }
-
-    protected void addSchema(Schema schema) {
-        this.schemas.put(schema.id(), schema);
     }
 }

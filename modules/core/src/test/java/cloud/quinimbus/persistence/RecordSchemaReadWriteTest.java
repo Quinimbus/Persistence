@@ -48,8 +48,7 @@ public class RecordSchemaReadWriteTest {
     @Test
     public void testReaderAndWriter() throws InvalidSchemaException, EntityReaderInitialisationException, EntityWriterInitialisationException {
         var schemaProvider = new RecordSchemaProvider();
-        schemaProvider.importSchema("blog", 1L, BlogEntry.class);
-        var schema = schemaProvider.getSchemas().stream().findFirst().get();
+        var schema = schemaProvider.importSchema("blog", 1L, BlogEntry.class);
         var blogEntryType = schema.entityTypes().get("blogEntry");
         var blogEntryReader = new RecordEntityReader<>(blogEntryType, BlogEntry.class, "id");
         var blogEntryWriter = new RecordEntityWriter<>(blogEntryType, BlogEntry.class, "id");
@@ -75,8 +74,7 @@ public class RecordSchemaReadWriteTest {
     @Test
     public void testNullValues() throws InvalidSchemaException, EntityReaderInitialisationException, EntityWriterInitialisationException {
         var schemaProvider = new RecordSchemaProvider();
-        schemaProvider.importSchema("blog", 1L, BlogEntry.class);
-        var schema = schemaProvider.getSchemas().stream().findFirst().get();
+        var schema = schemaProvider.importSchema("blog", 1L, BlogEntry.class);
         var blogEntryType = schema.entityTypes().get("blogEntry");
         var blogEntryReader = new RecordEntityReader<>(blogEntryType, BlogEntry.class, "id");
         var blogEntryWriter = new RecordEntityWriter<>(blogEntryType, BlogEntry.class, "id");

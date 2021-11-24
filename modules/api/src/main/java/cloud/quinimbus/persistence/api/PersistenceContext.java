@@ -1,5 +1,6 @@
 package cloud.quinimbus.persistence.api;
 
+import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.entity.Entity;
@@ -13,13 +14,18 @@ import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
+import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public interface PersistenceContext {
+
+    <T extends PersistenceSchemaStorage> Optional<? extends PersistenceStorageProvider<T>> getStorageProvider(String alias);
+    
+    Optional<PersistenceSchemaProvider> getSchemaProvider(String alias);
 
     Optional<Schema> getSchema(String id);
 
@@ -35,9 +41,13 @@ public interface PersistenceContext {
 
     EmbeddedObject newEmbedded(EmbeddedPropertyType type, EntityType parentType, List<String> path, Map<String, Object> properties) throws UnparseableValueException;
 
-    PersistenceSchemaProvider importSchemaFromSingleJson(InputStream inputStream) throws IOException;
+    Schema importSchema(PersistenceSchemaProvider provider) throws InvalidSchemaException;
 
-    PersistenceSchemaProvider importRecordSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException;
+    Schema importSchema(PersistenceSchemaProvider provider, ConfigNode configNode) throws InvalidSchemaException;
+    
+    Schema importSchemaFromSingleJson(Reader reader) throws InvalidSchemaException, IOException;
+
+    Schema importRecordSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException;
 
     <T extends Record> EntityReader<T> getRecordEntityReader(EntityType type, Class<T> recordClass) throws EntityReaderInitialisationException;
 

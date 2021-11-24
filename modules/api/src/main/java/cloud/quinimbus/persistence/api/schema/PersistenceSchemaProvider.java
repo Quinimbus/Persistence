@@ -1,9 +1,11 @@
 package cloud.quinimbus.persistence.api.schema;
 
-import java.util.Set;
+import cloud.quinimbus.config.api.ConfigNode;
+import java.util.Map;
 
-@FunctionalInterface
 public interface PersistenceSchemaProvider {
 
-    public Set<Schema> getSchemas();
+    Schema loadSchema(Map<String, Object> params) throws InvalidSchemaException;
+
+    Schema loadSchema(ConfigNode node) throws InvalidSchemaException;
 }

@@ -25,14 +25,22 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>common-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>config-api</artifactId>
         </dependency>
         <dependency>
             <groupId>cloud.quinimbus</groupId>
             <artifactId>tools</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
         <dependency>
             <groupId>name.falgout.jeffrey</groupId>
             <artifactId>throwing-streams</artifactId>

@@ -2,11 +2,15 @@ package cloud.quinimbus.persistence.test.base;
 
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
+import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -20,6 +24,8 @@ public abstract class AbstractStorageProviderTest {
     private PersistenceContext persistenceContext;
     
     public abstract PersistenceStorageProvider getStorageProvider();
+    
+    public abstract Map<String, Object> getParams();
 
     @BeforeEach
     public void init() {
@@ -27,15 +33,16 @@ public abstract class AbstractStorageProviderTest {
     }
     
     @Test
-    public void testInitSchema() throws IOException {
-        this.persistenceContext.importSchemaFromSingleJson(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"));
+    public void testInitSchema() throws IOException, InvalidSchemaException {
+        this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
     }
     
     @Test
-    public void testSaveAndLoad() throws IOException, PersistenceException {
-        var provider = this.persistenceContext.importSchemaFromSingleJson(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"));
-        var schema = provider.getSchemas().stream().findFirst().get();
-        var storage = this.getStorageProvider().createSchema(this.persistenceContext, schema);
+    public void testSaveAndLoad() throws IOException, PersistenceException, InvalidSchemaException {
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var params = new LinkedHashMap<>(this.getParams());
+        params.put("schema", schema.id());
+        var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
         var entryType = schema.entityTypes().get("entry");
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
@@ -60,10 +67,11 @@ public abstract class AbstractStorageProviderTest {
     }
     
     @Test
-    public void testSaveAndLoadList() throws IOException, PersistenceException {
-        var provider = this.persistenceContext.importSchemaFromSingleJson(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"));
-        var schema = provider.getSchemas().stream().findFirst().get();
-        var storage = this.getStorageProvider().createSchema(this.persistenceContext, schema);
+    public void testSaveAndLoadList() throws IOException, PersistenceException, InvalidSchemaException {
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var params = new LinkedHashMap<>(this.getParams());
+        params.put("schema", schema.id());
+        var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
         var entryType = schema.entityTypes().get("entry");
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");

@@ -1,5 +1,7 @@
 package cloud.quinimbus.persistence;
 
+import cloud.quinimbus.common.annotations.Provider;
+import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
 import cloud.quinimbus.persistence.api.entity.Entity;
@@ -21,6 +23,7 @@ import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.IntegerPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
+import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import cloud.quinimbus.persistence.entity.DefaultEmbeddedObject;
 import cloud.quinimbus.persistence.parsers.BooleanParser;
 import cloud.quinimbus.persistence.parsers.EmbeddedParser;
@@ -32,14 +35,16 @@ import cloud.quinimbus.persistence.parsers.ValueParser;
 import cloud.quinimbus.persistence.schema.json.SingleJsonSchemaProvider;
 import cloud.quinimbus.persistence.schema.record.RecordSchemaProvider;
 import cloud.quinimbus.persistence.storage.inmemory.InMemorySchemaStorage;
+import cloud.quinimbus.tools.throwing.ThrowingOptional;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
@@ -48,10 +53,47 @@ public class PersistenceContextImpl implements PersistenceContext {
     private final Map<String, Schema> schemas;
 
     private final Map<String, PersistenceSchemaStorage> schemaStorages;
+    
+    private final Map<String, PersistenceSchemaProvider> schemaProviders;
+
+    private final Map<String, PersistenceStorageProvider<? extends PersistenceSchemaStorage>> schemaStorageProviders;
 
     public PersistenceContextImpl() {
         this.schemas = new LinkedHashMap<>();
         this.schemaStorages = new LinkedHashMap<>();
+        this.schemaProviders = new LinkedHashMap<>();
+        this.schemaStorageProviders = new LinkedHashMap<>();
+        ServiceLoader.load(PersistenceSchemaProvider.class).forEach(sp -> {
+            var providerAnno = sp.getClass().getAnnotation(Provider.class);
+            if (providerAnno == null) {
+                throw new IllegalStateException(
+                        "Schema provider %s is missing the @Provider annotation"
+                                .formatted(sp.getClass().getName()));
+            }
+            for (String a : providerAnno.alias()) {
+                this.schemaProviders.put(a, sp);
+            }
+        });
+        ServiceLoader.load(PersistenceStorageProvider.class).forEach(ssp -> {
+            var providerAnno = ssp.getClass().getAnnotation(Provider.class);
+            if (providerAnno == null) {
+                throw new IllegalStateException(
+                        "Schema storage provider %s is missing the @Provider annotation"
+                                .formatted(ssp.getClass().getName()));
+            }
+            for (String a : providerAnno.alias()) {
+                this.schemaStorageProviders.put(a, ssp);
+            }
+        });
+    }
+    
+    public <T extends PersistenceSchemaStorage> Optional<? extends PersistenceStorageProvider<T>> getStorageProvider(String alias) {
+        return Optional.ofNullable((PersistenceStorageProvider<T>) this.schemaStorageProviders.get(alias));
+    }
+
+    @Override
+    public Optional<PersistenceSchemaProvider> getSchemaProvider(String alias) {
+        return Optional.ofNullable(this.schemaProviders.get(alias));
     }
 
     @Override
@@ -106,19 +148,37 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
-    public PersistenceSchemaProvider importSchemaFromSingleJson(InputStream inputStream) throws IOException {
-        var provider = new SingleJsonSchemaProvider();
-        provider.importSchema(inputStream);
-        provider.getSchemas().stream().forEach(s -> schemas.put(s.id(), s));
-        return provider;
+    public Schema importSchema(PersistenceSchemaProvider provider) throws InvalidSchemaException {
+        var schema = provider.loadSchema(Map.of());
+        schemas.put(schema.id(), schema);
+        return schema;
     }
 
     @Override
-    public PersistenceSchemaProvider importRecordSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException {
-        var provider = new RecordSchemaProvider();
-        provider.importSchema(recordClasses);
-        provider.getSchemas().stream().forEach(s -> schemas.put(s.id(), s));
-        return provider;
+    public Schema importSchema(PersistenceSchemaProvider provider, ConfigNode configNode) throws InvalidSchemaException {
+        var schema = provider.loadSchema(configNode);
+        schemas.put(schema.id(), schema);
+        return schema;
+    }
+
+    @Override
+    public Schema importSchemaFromSingleJson(Reader reader) throws IOException, InvalidSchemaException {
+        var schema = ThrowingOptional.ofOptional(this.getSchemaProvider("singlefile"), IOException.class)
+                .map(p -> (SingleJsonSchemaProvider) p)
+                .map(p -> p.importSchema(reader))
+                .orElseThrow(() -> new InvalidSchemaException("Cannot find the singlefile schema provider"));
+        schemas.put(schema.id(), schema);
+        return schema;
+    }
+
+    @Override
+    public Schema importRecordSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException {
+        var schema = ThrowingOptional.ofOptional(this.getSchemaProvider("record"), InvalidSchemaException.class)
+                .map(p -> (RecordSchemaProvider)p)
+                .map(p -> p.importSchema(recordClasses))
+                .orElseThrow(() -> new InvalidSchemaException("Cannot find the record schema provider"));
+        schemas.put(schema.id(), schema);
+        return schema;
     }
 
     @Override

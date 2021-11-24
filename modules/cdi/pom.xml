@@ -20,6 +20,15 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>common-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>config-cdi</artifactId>
+        </dependency>
+        
+        <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>

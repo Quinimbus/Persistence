@@ -1,9 +1,13 @@
 package cloud.quinimbus.persistence.api.storage;
 
+import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.PersistenceContext;
-import cloud.quinimbus.persistence.api.schema.Schema;
+import cloud.quinimbus.persistence.api.PersistenceException;
+import java.util.Map;
 
-public interface PersistenceStorageProvider {
+public interface PersistenceStorageProvider<T extends PersistenceSchemaStorage> {
 
-    PersistenceSchemaStorage createSchema(PersistenceContext context, Schema schema);
+    T createSchema(PersistenceContext context, Map<String, Object> params) throws PersistenceException;
+
+    T createSchema(PersistenceContext context, ConfigNode config) throws PersistenceException;
 }

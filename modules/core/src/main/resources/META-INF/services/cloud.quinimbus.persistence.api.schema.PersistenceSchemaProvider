@@ -1,0 +1,2 @@
+cloud.quinimbus.persistence.schema.json.SingleJsonSchemaProvider
+cloud.quinimbus.persistence.schema.record.RecordSchemaProvider
