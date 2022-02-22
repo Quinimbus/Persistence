@@ -15,9 +15,12 @@ public class EmbeddedRecordWriter<T extends Record> extends AbstractRecordWriter
     }
 
     public Object tryWrite(Object o) {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof EmbeddedObject eo) {
             return this.write(eo);
         }
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("Cannot write %s of type %s as embedded record".formatted(o.toString(), o.getClass().getName()));
     }
 }
