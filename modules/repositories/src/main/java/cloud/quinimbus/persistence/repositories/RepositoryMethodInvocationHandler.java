@@ -1,11 +1,11 @@
 package cloud.quinimbus.persistence.repositories;
 
+import cloud.quinimbus.common.tools.Records;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.annotation.EntityTypeClass;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
-import cloud.quinimbus.persistence.common.Records;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -50,10 +50,15 @@ public abstract class RepositoryMethodInvocationHandler {
     
     protected EntityType getEntityType() throws InvalidRepositoryDefinitionException {
         var schema = this.getSchema();
-        var typeId = Records.idFromClassName(this.getEntityClass().getSimpleName());
-        return Optional.ofNullable(schema.entityTypes().get(typeId))
-                            .orElseThrow(() ->
-                                    new InvalidRepositoryDefinitionException("Cannot find the entity type %s in the schema %s"
-                                            .formatted(typeId, schema.id())));
+        var entityClass = this.getEntityClass();
+        if (entityClass.isRecord()) {
+            var recordClass = (Class<? extends Record>)entityClass;
+            var typeId = Records.idFromRecordClass(recordClass);
+            return Optional.ofNullable(schema.entityTypes().get(typeId))
+                                .orElseThrow(() ->
+                                        new InvalidRepositoryDefinitionException("Cannot find the entity type %s in the schema %s"
+                                                .formatted(typeId, schema.id())));
+        }
+        throw new IllegalArgumentException("Just record classes are supported at the moment");
     }
 }

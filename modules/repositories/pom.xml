@@ -22,6 +22,10 @@
     <dependencies>
         <dependency>
             <groupId>cloud.quinimbus</groupId>
+            <artifactId>common-tools</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
             <artifactId>persistence-api</artifactId>
             <version>${project.version}</version>
         </dependency>

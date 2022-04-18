@@ -6,6 +6,7 @@ module cloud.quinimbus.persistence.repositories {
     
     exports cloud.quinimbus.persistence.repositories;
     
+    requires cloud.quinimbus.common.tools;
     requires cloud.quinimbus.persistence.api;
     requires cloud.quinimbus.persistence.common;
     requires cloud.quinimbus.tools;

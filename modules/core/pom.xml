@@ -30,6 +30,10 @@
         </dependency>
         <dependency>
             <groupId>cloud.quinimbus</groupId>
+            <artifactId>common-tools</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
             <artifactId>config-api</artifactId>
         </dependency>
         <dependency>

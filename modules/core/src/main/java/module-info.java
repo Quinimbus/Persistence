@@ -15,6 +15,7 @@ module cloud.quinimbus.persistence.core {
     uses PersistenceStorageProvider;
     
     requires cloud.quinimbus.common.annotations;
+    requires cloud.quinimbus.common.tools;
     requires cloud.quinimbus.config.api;
     requires cloud.quinimbus.persistence.api;
     requires cloud.quinimbus.persistence.common;

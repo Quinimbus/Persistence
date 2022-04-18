@@ -1,6 +1,7 @@
 package cloud.quinimbus.persistence.schema.record;
 
 import cloud.quinimbus.common.annotations.Provider;
+import cloud.quinimbus.common.tools.Records;
 import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.annotation.Embeddable;
 import cloud.quinimbus.persistence.api.annotation.Entity;
@@ -18,7 +19,6 @@ import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.IntegerPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
-import cloud.quinimbus.persistence.common.Records;
 import java.lang.reflect.Field;
 import java.time.temporal.Temporal;
 import java.util.Arrays;
@@ -104,7 +104,7 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
 
     private static EntityType typeOfRecord(Class<? extends Record> recordClass) throws InvalidSchemaException {
         return new EntityType(
-                Records.idFromClassName(recordClass.getSimpleName()),
+                Records.idFromRecordClass(recordClass),
                 ThrowingStream.of(Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
                         .filter(f -> f.getAnnotation(EntityIdField.class) == null)
                         .map(RecordSchemaProvider::propertyOfField)
