@@ -46,6 +46,15 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
             return Optional.empty();
         }
     }
+    
+    @Override
+    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Map<String, Object> properties) {
+        var collection = this.database.getCollection(type.id());
+        return ThrowingStream.of(
+                StreamSupport.stream(collection.find(new Document(properties)).spliterator(), false),
+                PersistenceException.class)
+                .map(doc -> this.docToEntity(type, (K)doc.get("_id"), doc));
+    }
 
     @Override
     public <K> void save(Entity<K> entity) throws PersistenceException {

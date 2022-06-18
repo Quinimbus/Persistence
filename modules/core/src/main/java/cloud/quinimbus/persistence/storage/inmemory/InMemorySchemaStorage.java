@@ -36,6 +36,13 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
                 .map(m -> this.context.newEntity(id, type, m))
                 .toOptional();
     }
+    
+    @Override
+    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Map<String, Object> properties) {
+        return ThrowingStream.of(this.entities.get(type.id()).entrySet().stream(), PersistenceException.class)
+                .filter(e -> properties.entrySet().stream().allMatch(pe -> e.getValue().get(pe.getKey()).equals(pe.getValue())))
+                .map(e -> this.context.newEntity((K) e.getKey(), type, e.getValue()));
+    }
 
     @Override
     public <K> ThrowingStream<Entity<K>, PersistenceException> findAll(EntityType type) {

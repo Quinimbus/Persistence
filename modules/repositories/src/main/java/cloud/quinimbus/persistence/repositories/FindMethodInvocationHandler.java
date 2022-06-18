@@ -14,6 +14,8 @@ public class FindMethodInvocationHandler extends RepositoryMethodInvocationHandl
             this.delegate = new FindAllMethodInvocationHandler(iface, m, ctx);
         } else if ("findOne".equals(name)) {
             this.delegate = new FindOneMethodInvocationHandler(iface, m, ctx);
+        } else if ("findFiltered".equals(name)) {
+            this.delegate = new FindFilteredMethodInvocationHandler(iface, m, ctx);
         } else {
             throw new InvalidRepositoryDefinitionException("Cannot understand find method name %s".formatted(name));
         }
