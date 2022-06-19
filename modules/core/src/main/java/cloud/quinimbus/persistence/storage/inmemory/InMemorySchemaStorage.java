@@ -3,13 +3,16 @@ package cloud.quinimbus.persistence.storage.inmemory;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.Entity;
+import cloud.quinimbus.persistence.api.filter.PropertyFilter;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
@@ -38,9 +41,11 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
     }
     
     @Override
-    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Map<String, Object> properties) {
+    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters) {
         return ThrowingStream.of(this.entities.get(type.id()).entrySet().stream(), PersistenceException.class)
-                .filter(e -> properties.entrySet().stream().allMatch(pe -> e.getValue().get(pe.getKey()).equals(pe.getValue())))
+                .filter(e -> propertyFilters.stream().allMatch(pf -> switch(pf.operator()) {
+                    case EQUALS -> Objects.equals(e.getValue().get(pf.property()), pf.value());
+                }))
                 .map(e -> this.context.newEntity((K) e.getKey(), type, e.getValue()));
     }
 

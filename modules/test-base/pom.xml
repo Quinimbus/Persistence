@@ -25,11 +25,15 @@
             <artifactId>persistence-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>persistence-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.7.2</version>
         </dependency>
     </dependencies>
 </project>

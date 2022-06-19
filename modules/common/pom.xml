@@ -12,4 +12,32 @@
         <version>0.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
+    
+    <dependencies>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>persistence-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>name.falgout.jeffrey</groupId>
+            <artifactId>throwing-streams</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.20</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

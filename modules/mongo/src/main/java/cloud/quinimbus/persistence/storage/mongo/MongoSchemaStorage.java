@@ -4,6 +4,7 @@ import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
+import cloud.quinimbus.persistence.api.filter.PropertyFilter;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
@@ -12,6 +13,8 @@ import com.mongodb.client.MongoDatabase;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 import org.bson.Document;
@@ -48,10 +51,15 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
     }
     
     @Override
-    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Map<String, Object> properties) {
+    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters) {
         var collection = this.database.getCollection(type.id());
+        var propertyMap = propertyFilters.stream()
+                .collect(
+                        Collectors.toMap(
+                                pf -> pf.property(),
+                                pf -> pf.value()));
         return ThrowingStream.of(
-                StreamSupport.stream(collection.find(new Document(properties)).spliterator(), false),
+                StreamSupport.stream(collection.find(new Document(propertyMap)).spliterator(), false),
                 PersistenceException.class)
                 .map(doc -> this.docToEntity(type, (K)doc.get("_id"), doc));
     }

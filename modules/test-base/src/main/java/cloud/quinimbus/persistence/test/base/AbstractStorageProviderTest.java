@@ -5,6 +5,7 @@ import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
+import cloud.quinimbus.persistence.common.filter.FilterFactory;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -121,7 +122,7 @@ public abstract class AbstractStorageProviderTest {
         secondEntry.setProperty("tags", List.of("soccer", "championship"));
         //secondEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(secondEntry);
-        var sportsEntries = storage.findFiltered(entryType, Map.of("category", "SPORTS")).collect(Collectors.toList());
+        var sportsEntries = storage.findFiltered(entryType, FilterFactory.fromMap(Map.of("category", "SPORTS"))).collect(Collectors.toList());
         Assertions.assertEquals(1, sportsEntries.size());
         Assertions.assertEquals(secondEntry, sportsEntries.get(0));
     }
