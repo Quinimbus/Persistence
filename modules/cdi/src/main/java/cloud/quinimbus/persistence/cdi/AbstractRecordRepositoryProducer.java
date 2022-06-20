@@ -8,10 +8,19 @@ import javax.inject.Inject;
 
 public abstract class AbstractRecordRepositoryProducer {
 
-    @Inject
-    private PersistenceContext persistenceContext;
+    private final PersistenceContext persistenceContext;
 
     private RepositoryFactory repositoryFactory;
+
+    // to allow CDI proxy creation
+    public AbstractRecordRepositoryProducer() {
+        this.persistenceContext = null;
+    }
+
+    @Inject
+    public AbstractRecordRepositoryProducer(PersistenceContext persistenceContext) {
+        this.persistenceContext = persistenceContext;
+    }
 
     @PostConstruct
     public void init() {
