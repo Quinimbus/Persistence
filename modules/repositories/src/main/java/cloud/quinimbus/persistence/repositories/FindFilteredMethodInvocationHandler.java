@@ -4,8 +4,6 @@ import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.entity.EntityWriter;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
 import cloud.quinimbus.persistence.api.filter.PropertyFilter;
-import cloud.quinimbus.persistence.api.schema.EntityType;
-import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import cloud.quinimbus.persistence.common.filter.FilterFactory;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -15,11 +13,7 @@ import java.util.stream.Collectors;
 
 public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocationHandler {
 
-    private final EntityType entityType;
-
     private final EntityWriter entityWriter;
-
-    private final PersistenceSchemaStorage schemaStorage;
     
     private final Class parameterType;
 
@@ -37,9 +31,7 @@ public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocat
             var genericReturnType = this.getEntityClass();
             if (genericReturnType.isRecord()) {
                 try {
-                    this.entityType = this.getEntityType();
-                    this.entityWriter = ctx.getRecordEntityWriter(entityType, (Class<? extends Record>) genericReturnType);
-                    this.schemaStorage = this.getSchemaStorage();
+                    this.entityWriter = ctx.getRecordEntityWriter(this.getEntityType(), (Class<? extends Record>) genericReturnType);
                 } catch (EntityWriterInitialisationException ex) {
                     throw new InvalidRepositoryDefinitionException("Exception while creating writer for the repository", ex);
                 }
@@ -64,7 +56,7 @@ public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocat
         } else {
             throw new IllegalArgumentException("unknown parameter type: " + this.parameterType.getName());
         }
-        return this.schemaStorage.findFiltered(this.entityType, filters)
+        return this.getSchemaStorage().findFiltered(this.getEntityType(), filters)
                 .map(this.entityWriter::write)
                 .collect(Collectors.toList());
     }

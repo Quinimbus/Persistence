@@ -4,15 +4,12 @@ import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.EntityReader;
 import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationException;
-import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import cloud.quinimbus.reflection.GenericMethod;
 import java.lang.reflect.Method;
 
 public class SaveMethodInvocationHandler extends RepositoryMethodInvocationHandler {
 
     private final EntityReader entityReader;
-    
-    private final PersistenceSchemaStorage schemaStorage;
 
     public SaveMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
@@ -30,7 +27,6 @@ public class SaveMethodInvocationHandler extends RepositoryMethodInvocationHandl
             try {
                 var entityType = this.getEntityType();
                 this.entityReader = ctx.getRecordEntityReader(entityType, (Class<? extends Record>) parameterType);
-                this.schemaStorage = this.getSchemaStorage();
                 return;
             } catch (EntityReaderInitialisationException ex) {
                 throw new InvalidRepositoryDefinitionException("Exception while creating reader for the repository", ex);
@@ -43,7 +39,7 @@ public class SaveMethodInvocationHandler extends RepositoryMethodInvocationHandl
     public Object invoke(Object proxy, Object[] args) throws Throwable {
         var entityRecord = args[0];
         var entity = this.entityReader.read(entityRecord);
-        this.schemaStorage.save(entity);
+        this.getSchemaStorage().save(entity);
         return null;
     }
 }
