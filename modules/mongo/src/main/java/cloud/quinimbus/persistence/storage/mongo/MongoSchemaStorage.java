@@ -3,13 +3,18 @@ package cloud.quinimbus.persistence.storage.mongo;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.Entity;
+import cloud.quinimbus.persistence.api.entity.StructuredObjectEntry;
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
 import cloud.quinimbus.persistence.api.filter.PropertyFilter;
 import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.EntityTypePropertyType;
 import cloud.quinimbus.persistence.api.schema.Schema;
+import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -66,7 +71,7 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
 
     @Override
     public <K> void save(Entity<K> entity) throws PersistenceException {
-        var map = new LinkedHashMap<>(entity.asBasicMap());
+        var map = new LinkedHashMap<>(entity.asBasicMap(this::convertProperty));
         map.put("_id", entity.getId());
         var collection = this.database.getCollection(entity.getType().id());
         var idDocument = new Document(Map.of("_id", entity.getId()));
@@ -96,5 +101,12 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
         var collection = this.database.getCollection(type.id());
         var idDocument = new Document(Map.of("_id", id));
         collection.deleteOne(idDocument);
+    }
+    
+    private Object convertProperty(StructuredObjectEntry<EntityTypePropertyType> entry) {
+        if (entry.type() instanceof LocalDatePropertyType) {
+            return ((LocalDate)entry.value()).format(DateTimeFormatter.ISO_DATE);
+        }
+        return entry.value();
     }
 }
