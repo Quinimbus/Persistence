@@ -8,6 +8,7 @@ import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.IntegerPropertyType;
+import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
@@ -56,6 +57,7 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
                         case "STRING" -> new StringPropertyType();
                         case "BOOLEAN" -> new BooleanPropertyType();
                         case "TIMESTAMP" -> new TimestampPropertyType();
+                        case "LOCALDATE" -> new LocalDatePropertyType();
                         case "INTEGER" -> new IntegerPropertyType();
                         default -> throw new IllegalStateException("Unknown simple property type in json: " + type);
                     };

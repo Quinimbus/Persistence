@@ -10,6 +10,9 @@
                 "published": {
                     "type": "BOOLEAN"
                 },
+                "publishDate": {
+                    "type": "LOCALDATE"
+                },
                 "created": {
                     "type": "TIMESTAMP"
                 },

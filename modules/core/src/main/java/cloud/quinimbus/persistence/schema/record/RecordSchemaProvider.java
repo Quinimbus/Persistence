@@ -17,10 +17,12 @@ import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.IntegerPropertyType;
+import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 import java.lang.reflect.Field;
-import java.time.temporal.Temporal;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +138,10 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         if (Boolean.class.equals(cls) || boolean.class.equals(cls)) {
             return new BooleanPropertyType();
         }
-        if (Temporal.class.isAssignableFrom(cls)) {
+        if (LocalDate.class.isAssignableFrom(cls)) {
+            return new LocalDatePropertyType();
+        }
+        if (Instant.class.isAssignableFrom(cls)) {
             return new TimestampPropertyType();
         }
         if (Enum.class.isAssignableFrom(cls)) {

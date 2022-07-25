@@ -21,6 +21,7 @@ import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.IntegerPropertyType;
+import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
@@ -29,6 +30,7 @@ import cloud.quinimbus.persistence.parsers.BooleanParser;
 import cloud.quinimbus.persistence.parsers.EmbeddedParser;
 import cloud.quinimbus.persistence.parsers.EnumParser;
 import cloud.quinimbus.persistence.parsers.IntegerParser;
+import cloud.quinimbus.persistence.parsers.LocalDateParser;
 import cloud.quinimbus.persistence.parsers.StringParser;
 import cloud.quinimbus.persistence.parsers.TimestampParser;
 import cloud.quinimbus.persistence.parsers.ValueParser;
@@ -235,6 +237,8 @@ public class PersistenceContextImpl implements PersistenceContext {
             return new BooleanParser();
         } else if (type instanceof TimestampPropertyType) {
             return new TimestampParser();
+        } else if (type instanceof LocalDatePropertyType) {
+            return new LocalDateParser();
         } else if (type instanceof EnumPropertyType ept) {
             return new EnumParser(ept.allowedValues());
         } else if (type instanceof IntegerPropertyType) {

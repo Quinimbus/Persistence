@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,6 +49,7 @@ public abstract class AbstractStorageProviderTest {
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
         firstEntry.setProperty("published", true);
+        firstEntry.setProperty("publishDate", LocalDate.now());
         firstEntry.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
         firstEntry.setProperty("category", "POLITICS");
         firstEntry.setProperty("readcount", 15);
@@ -77,6 +79,7 @@ public abstract class AbstractStorageProviderTest {
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
         firstEntry.setProperty("published", true);
+        firstEntry.setProperty("publishDate", LocalDate.now());
         firstEntry.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
         firstEntry.setProperty("category", "POLITICS");
         firstEntry.setProperty("readcount", 15);
@@ -86,6 +89,7 @@ public abstract class AbstractStorageProviderTest {
         var secondEntry = this.persistenceContext.newEntity("second", entryType);
         secondEntry.setProperty("title", "My second entry");
         secondEntry.setProperty("published", true);
+        secondEntry.setProperty("publishDate", LocalDate.now());
         secondEntry.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
         secondEntry.setProperty("category", "POLITICS");
         secondEntry.setProperty("readcount", 12);
@@ -107,6 +111,7 @@ public abstract class AbstractStorageProviderTest {
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
         firstEntry.setProperty("published", true);
+        firstEntry.setProperty("publishDate", LocalDate.now());
         firstEntry.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
         firstEntry.setProperty("category", "POLITICS");
         firstEntry.setProperty("readcount", 15);
@@ -116,6 +121,7 @@ public abstract class AbstractStorageProviderTest {
         var secondEntry = this.persistenceContext.newEntity("second", entryType);
         secondEntry.setProperty("title", "My second entry");
         secondEntry.setProperty("published", true);
+        secondEntry.setProperty("publishDate", LocalDate.now());
         secondEntry.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
         secondEntry.setProperty("category", "SPORTS");
         secondEntry.setProperty("readcount", 12);

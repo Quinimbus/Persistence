@@ -2,7 +2,14 @@ package cloud.quinimbus.persistence.parsers;
 
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
 
-public sealed interface ValueParser<T> permits BooleanParser, EmbeddedParser, EnumParser, IntegerParser, StringParser, TimestampParser {
+public sealed interface ValueParser<T> permits
+        BooleanParser,
+        EmbeddedParser,
+        EnumParser,
+        IntegerParser,
+        LocalDateParser,
+        StringParser,
+        TimestampParser {
 
     T parse(Object o) throws UnparseableValueException;
 }
