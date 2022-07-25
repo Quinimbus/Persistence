@@ -146,7 +146,7 @@ public class PersistenceContextImpl implements PersistenceContext {
                         e.getKey(),
                         this.parse(parentType, path, typeProperties.get(e.getKey()), e)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new DefaultEmbeddedObject(path.toArray(new String[]{}), parentType, parsedProperties);
+        return new DefaultEmbeddedObject(path.toArray(new String[]{}), parentType, parsedProperties, type);
     }
 
     @Override

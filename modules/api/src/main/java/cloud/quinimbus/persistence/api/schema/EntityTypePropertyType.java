@@ -1,5 +1,6 @@
 package cloud.quinimbus.persistence.api.schema;
 
+import cloud.quinimbus.persistence.api.entity.StructuredObjectEntryType;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
@@ -8,7 +9,7 @@ import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 
-public sealed interface EntityTypePropertyType permits
+public sealed interface EntityTypePropertyType extends StructuredObjectEntryType permits
         BooleanPropertyType,
         EmbeddedPropertyType,
         EnumPropertyType,

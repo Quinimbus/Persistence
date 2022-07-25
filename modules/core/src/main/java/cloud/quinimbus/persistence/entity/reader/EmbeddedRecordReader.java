@@ -10,6 +10,8 @@ import java.util.List;
 
 public class EmbeddedRecordReader<T extends Record> extends AbstractRecordReader {
 
+    private final EmbeddedPropertyType type;
+
     private final String[] path;
 
     private final EntityType parentType;
@@ -18,6 +20,7 @@ public class EmbeddedRecordReader<T extends Record> extends AbstractRecordReader
         super(parentType, type.properties(), recordClass);
         this.path = path.toArray(new String[]{});
         this.parentType = parentType;
+        this.type = type;
     }
 
     public EmbeddedObject readRecord(T source) {
@@ -25,7 +28,8 @@ public class EmbeddedRecordReader<T extends Record> extends AbstractRecordReader
             return new DefaultEmbeddedObject(
                     this.path,
                     this.parentType,
-                    this.getProperties(source));
+                    this.getProperties(source),
+                    this.type);
         } catch (ReflectiveOperationException ex) {
             throw new EntityReaderReadException("Error reading the source object %s".formatted(source.toString()), ex);
         }
