@@ -20,7 +20,7 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
       - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots verify
+        run: mvn --batch-mode --update-snapshots verify site
       - name: Deploy package to repository
         env:
           REPOUSER: ${{ secrets.repouser }}
@@ -29,3 +29,12 @@ jobs:
           mkdir -p ~/.m2
           echo "<settings><servers><server><id>quinimbus-snapshots</id><username>\${env.REPOUSER}</username><password>\${env.REPOPASS}</password></server><server><id>quinimbus-releases</id><username>\${env.REPOUSER}</username><password>\${env.REPOPASS}</password></server></servers></settings>" > ~/.m2/settings.xml
           mvn -DskipTests deploy
+      - name: Deploy apidocs
+        uses: balta3/action-upload-webdav@main
+        with:
+          webdav_address: https://apidocs-dav.quinimbus.cloud
+          webdav_username: ${{secrets.apidocs_dav_user}}
+          webdav_password: ${{secrets.apidocs_dav_pass}}
+          webdav_upload_path: "/Persistence/SNAPSHOT/"
+          files: "./target/site/apidocs/**"
+          filesBase: "./target/site/apidocs/"
