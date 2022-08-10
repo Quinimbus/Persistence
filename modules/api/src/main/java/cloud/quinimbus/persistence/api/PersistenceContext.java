@@ -21,12 +21,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * The persistence context is the central object for using Quinimbus Persistence.
+ */
 public interface PersistenceContext {
 
+    /**
+     * Get the storage provider registered by the given alias.
+     * 
+     * @param <T> The type of the storage the provider will produce
+     * @param alias The alias of the provider
+     * @return An {@link Optional} containing the provider if present, an empty {@link Optional} otherwise
+     */
     <T extends PersistenceSchemaStorage> Optional<? extends PersistenceStorageProvider<T>> getStorageProvider(String alias);
     
+    /**
+     * Get the schema provider registered by the given alias.
+     * 
+     * @param alias The alias of the provider
+     * @return An {@link Optional} containing the provider if present, an empty {@link Optional} otherwise
+     */
     Optional<PersistenceSchemaProvider> getSchemaProvider(String alias);
 
+    /**
+     * Get the schame registered by the given id.
+     * 
+     * @param id The id of the schema
+     * @return An {@link Optional} containing the schema if present, an empty {@link Optional} otherwise
+     */
     Optional<Schema> getSchema(String id);
 
     Optional<PersistenceSchemaStorage> getSchemaStorage(String id);
