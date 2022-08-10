@@ -37,4 +37,4 @@ jobs:
           webdav_password: ${{secrets.apidocs_dav_pass}}
           webdav_upload_path: "/Persistence/SNAPSHOT/"
           files: "./target/site/apidocs/**"
-          filesBase: "./target/site/apidocs/"
+          files_base: "./target/site/apidocs/"
