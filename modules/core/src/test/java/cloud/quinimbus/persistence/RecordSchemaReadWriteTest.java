@@ -41,7 +41,8 @@ public class RecordSchemaReadWriteTest {
             Integer readcount,
             @EntityField(type = String.class) Set<String> tags,
             Author author,
-            @EntityField(type = Ad.class) Set<Ad> ads) {
+            @EntityField(type = Ad.class) Set<Ad> ads,
+            @EntityField(type = Integer.class) Map<String, Integer> ratings) {
 
     }
 
@@ -61,7 +62,8 @@ public class RecordSchemaReadWriteTest {
                 15,
                 Set.of("europe", "politics"),
                 new Author("Max Mustermann", "The first of all authors."),
-                Set.of(new Ad("Google")));
+                Set.of(new Ad("Google")),
+                Map.of("userA", 1, "userB", 3));
         var entity = blogEntryReader.read(entry);
         var map = entity.asBasicMap();
         Assertions.assertTrue(map.get("author") instanceof Map);
@@ -87,7 +89,8 @@ public class RecordSchemaReadWriteTest {
                 15,
                 Set.of("europe", "politics"),
                 new Author("Max Mustermann", "The first of all authors."),
-                Set.of(new Ad("Google")));
+                Set.of(new Ad("Google")),
+                Map.of());
         var entity = blogEntryReader.read(entry);
         var loaded = blogEntryWriter.write(entity);
         Assertions.assertEquals(entry, loaded);

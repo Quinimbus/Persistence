@@ -64,6 +64,8 @@ public abstract class AbstractStorageProviderTest {
                 Map.of(
                         "name", "Max Mustermann",
                         "subtext", "The first of all authors.")));
+        firstEntry.setProperty("ratings", Map.of(
+                "userA", 1, "userB", 2));
         storage.save(firstEntry);
         var resultFromStorage = storage.find(entryType, "first").get();
         Assertions.assertEquals(firstEntry, resultFromStorage);
@@ -84,6 +86,8 @@ public abstract class AbstractStorageProviderTest {
         firstEntry.setProperty("category", "POLITICS");
         firstEntry.setProperty("readcount", 15);
         firstEntry.setProperty("tags", List.of("election", "politics"));
+        firstEntry.setProperty("ratings", Map.of(
+                "userA", 1, "userB", 2));
         //firstEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(firstEntry);
         var secondEntry = this.persistenceContext.newEntity("second", entryType);
@@ -94,6 +98,8 @@ public abstract class AbstractStorageProviderTest {
         secondEntry.setProperty("category", "POLITICS");
         secondEntry.setProperty("readcount", 12);
         secondEntry.setProperty("tags", List.of("election", "politics"));
+        secondEntry.setProperty("ratings", Map.of(
+                "userA", 5, "userB", 1));
         //secondEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(secondEntry);
         var resultFromStorage = storage.findAll(entryType).collect(Collectors.toList());

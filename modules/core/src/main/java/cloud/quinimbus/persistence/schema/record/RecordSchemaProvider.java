@@ -114,7 +114,7 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
     }
 
     private static EntityTypeProperty propertyOfField(Field field) throws InvalidSchemaException {
-        if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType())) {
+        if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType())) {
             var fieldAnno = field.getAnnotation(EntityField.class);
             if (fieldAnno == null) {
                 throw new InvalidSchemaException("Missing @EntityField annotation for the field %s of type %s to define the type".formatted(field.getName(), field.getType().getName()));
@@ -122,7 +122,11 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
             return new cloud.quinimbus.persistence.api.schema.EntityTypeProperty(
                     field.getName(),
                     typeOfClass(fieldAnno.type()),
-                    Set.class.isAssignableFrom(field.getType()) ? EntityTypeProperty.Structure.SET : EntityTypeProperty.Structure.LIST);
+                    Set.class.isAssignableFrom(field.getType())
+                            ? EntityTypeProperty.Structure.SET
+                            : List.class.isAssignableFrom(field.getType())
+                                    ? EntityTypeProperty.Structure.LIST
+                                    :EntityTypeProperty.Structure.MAP);
         } else {
             return new cloud.quinimbus.persistence.api.schema.EntityTypeProperty(
                     field.getName(),

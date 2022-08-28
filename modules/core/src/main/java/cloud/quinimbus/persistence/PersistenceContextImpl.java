@@ -217,6 +217,15 @@ public class PersistenceContextImpl implements PersistenceContext {
                 throw new UnparseableValueException(
                         "Cannot read a value of type %s as list structure".formatted(e.getValue().getClass()));
             }
+            case MAP -> {
+                if (e.getValue() instanceof Map<?, ?> map) {
+                    yield ThrowingStream.of(map.entrySet().stream(), UnparseableValueException.class)
+                        .map(e2 -> Map.entry(e2.getKey(), parser.parse(e2.getValue())))
+                        .collect(Collectors.toMap(e2 -> e2.getKey(), e2 -> e2.getValue()));
+                }
+                throw new UnparseableValueException(
+                        "Cannot read a value of type %s as map structure".formatted(e.getValue().getClass()));
+            }
             case SET -> {
                 if (e.getValue() instanceof Collection<?> col) {
                     yield ThrowingStream.of(col.stream(), UnparseableValueException.class)

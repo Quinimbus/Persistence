@@ -14,6 +14,7 @@ import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -67,12 +68,13 @@ public class AbstractRecordWriter<T extends Record> {
             try {
                 var targetClass = switch (t.structure()) {
                     case SINGLE -> (Class<Record>) recordClass.getMethod(t.name()).getReturnType();
-                    case LIST, SET -> (Class<Record>) recordClass.getDeclaredField(t.name()).getAnnotation(EntityField.class).type();
+                    case LIST, SET, MAP -> (Class<Record>) recordClass.getDeclaredField(t.name()).getAnnotation(EntityField.class).type();
                 };
                 var writer = new EmbeddedRecordWriter<Record>(targetClass, ept);
                 return switch (t.structure()) {
                     case SINGLE -> writer::tryWrite;
                     case LIST -> listWriter(writer::tryWrite);
+                    case MAP -> mapWriter(writer::tryWrite);
                     case SET -> setWriter(writer::tryWrite);
                 };
             } catch (ReflectiveOperationException | SecurityException ex) {
@@ -82,7 +84,7 @@ public class AbstractRecordWriter<T extends Record> {
             try {
                 var targetClass = switch (t.structure()) {
                     case SINGLE -> (Class<Record>) recordClass.getMethod(t.name()).getReturnType();
-                    case LIST, SET -> (Class<Record>) recordClass.getDeclaredField(t.name()).getAnnotation(EntityField.class).type();
+                    case LIST, SET, MAP -> (Class<Record>) recordClass.getDeclaredField(t.name()).getAnnotation(EntityField.class).type();
                 };
                 var valueOfMethod = targetClass.getMethod("valueOf", String.class);
                 Function<Object, Object> writer = v -> {
@@ -101,6 +103,7 @@ public class AbstractRecordWriter<T extends Record> {
                 return switch (t.structure()) {
                     case SINGLE -> writer;
                     case LIST -> listWriter(writer);
+                    case MAP -> mapWriter(writer);
                     case SET -> setWriter(writer);
                 };
             } catch (ReflectiveOperationException | SecurityException ex) {
@@ -129,6 +132,22 @@ public class AbstractRecordWriter<T extends Record> {
                 return null;
             } else if (vl instanceof Collection c) {
                 return c.stream().map(singleWriter).collect(Collectors.toSet());
+            } else {
+                throw new IllegalStateException();
+            }
+        };
+    }
+    
+    private static Function<Object, Object> mapWriter(Function<Object, Object> singleWriter) {
+        return vl -> {
+            if (vl == null) {
+                return null;
+            } else if (vl instanceof Map<?, ?> m) {
+                return m.entrySet().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        e -> e.getKey(),
+                                        e -> singleWriter.apply(e.getValue())));
             } else {
                 throw new IllegalStateException();
             }

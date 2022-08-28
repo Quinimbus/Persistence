@@ -6,6 +6,7 @@ import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
+import cloud.quinimbus.tools.stream.QCollectors;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
@@ -49,12 +50,13 @@ public class AbstractRecordReader<T extends Record> {
             try {
                 var targetClass = switch (t.structure()) {
                     case SINGLE -> (Class<Record>) recordClass.getMethod(t.name()).getReturnType();
-                    case LIST, SET -> (Class<Record>) recordClass.getDeclaredField(t.name()).getAnnotation(EntityField.class).type();
+                    case LIST, SET, MAP -> (Class<Record>) recordClass.getDeclaredField(t.name()).getAnnotation(EntityField.class).type();
                 };
                 var reader = new EmbeddedRecordReader(ept, targetClass, List.of(t.name()), type);
                 return switch (t.structure()) {
                     case SINGLE -> reader::tryRead;
                     case LIST -> listReader(reader::tryRead);
+                    case MAP -> mapReader(reader::tryRead);
                     case SET -> setReader(reader::tryRead);
                 };
             } catch (ReflectiveOperationException | SecurityException ex) {
@@ -70,6 +72,7 @@ public class AbstractRecordReader<T extends Record> {
             return switch (t.structure()) {
                 case SINGLE -> reader;
                 case LIST -> listReader(reader);
+                case MAP -> mapReader(reader);
                 case SET -> setReader(reader);
             };
         } else {
@@ -91,6 +94,20 @@ public class AbstractRecordReader<T extends Record> {
         return vl -> {
             if (vl instanceof Collection c) {
                 return c.stream().map(singleReader).collect(Collectors.toSet());
+            } else {
+                throw new IllegalStateException();
+            }
+        };
+    }
+    
+    private static Function<Object, Object> mapReader(Function<Object, Object> singleReader) {
+        return vl -> {
+            if (vl instanceof Map<?, ?> m) {
+                return m.entrySet().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        e -> e.getKey(),
+                                        e -> singleReader.apply(e.getValue())));
             } else {
                 throw new IllegalStateException();
             }

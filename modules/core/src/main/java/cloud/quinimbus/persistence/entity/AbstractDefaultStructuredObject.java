@@ -73,6 +73,9 @@ abstract class AbstractDefaultStructuredObject<ET extends StructuredObjectEntryT
             return l.stream().map(e -> valueForMap(key, e, converter)).toList();
         } else if (o instanceof Set s) {
             return s.stream().map(e -> valueForMap(key, e, converter)).collect(Collectors.toSet());
+        } else if (o instanceof Map<?, ?> m) {
+            return m.entrySet().stream().collect(
+                    Collectors.toMap(e -> e.getKey(), e -> valueForMap(key, e.getValue(), converter)));
         } else {
             return converter.apply(this.getPropertyEntry(key, o)
                     .orElseThrow(() -> new IllegalStateException("Missing property entry for " + key)));
@@ -95,6 +98,13 @@ abstract class AbstractDefaultStructuredObject<ET extends StructuredObjectEntryT
                 partialValue,
                 etp.type(),
                 true) : null;
+            case MAP ->
+                (value != null && value instanceof Map m && m.containsValue(partialValue))
+                ? new DefaultEntityPropertyEntry(
+                        etp.name(),
+                        partialValue,
+                        etp.type(),
+                        true) : null;
             case SET ->
                 (value != null && value instanceof Set s && s.contains(partialValue))
                 ? new DefaultEntityPropertyEntry(

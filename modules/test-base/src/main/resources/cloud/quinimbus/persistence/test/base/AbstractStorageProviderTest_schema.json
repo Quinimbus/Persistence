@@ -41,6 +41,10 @@
                             }
                         }
                     }
+                },
+                "ratings": {
+                    "type": "INTEGER",
+                    "structure": "MAP"
                 }
             }
         }
