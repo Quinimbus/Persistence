@@ -9,6 +9,6 @@ open module cloud.quinimbus.persistence.api {
     exports cloud.quinimbus.persistence.api.storage;
     
     requires cloud.quinimbus.config.api;
-    requires lombok;
+    requires static lombok;
     requires throwing.streams;
 }

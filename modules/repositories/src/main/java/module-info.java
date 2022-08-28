@@ -10,7 +10,7 @@ module cloud.quinimbus.persistence.repositories {
     requires cloud.quinimbus.persistence.api;
     requires cloud.quinimbus.persistence.common;
     requires cloud.quinimbus.tools;
-    requires lombok;
+    requires static lombok;
     requires throwing.interfaces;
     requires throwing.streams;
 }

@@ -25,6 +25,6 @@ module cloud.quinimbus.persistence.core {
     requires com.fasterxml.jackson.core;
     requires throwing.streams;
     requires throwing.interfaces;
-    requires lombok;
+    requires static lombok;
 }
 
