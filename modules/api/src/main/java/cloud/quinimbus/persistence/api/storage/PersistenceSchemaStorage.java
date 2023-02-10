@@ -4,11 +4,16 @@ import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.filter.PropertyFilter;
 import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.Metadata;
 import java.util.Optional;
 import java.util.Set;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 public interface PersistenceSchemaStorage {
+    
+    Metadata getSchemaMetadata() throws PersistenceException;
+    
+    void increaseSchemaVersion(Long version)throws PersistenceException;
 
     <K> void save(Entity<K> entity) throws PersistenceException;
 

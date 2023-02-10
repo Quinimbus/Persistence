@@ -38,6 +38,17 @@ public abstract class AbstractStorageProviderTest {
     public void testInitSchema() throws IOException, InvalidSchemaException {
         this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
     }
+    
+    @Test
+    public void testMetadata() throws IOException, PersistenceException, InvalidSchemaException {
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var params = new LinkedHashMap<>(this.getParams());
+        params.put("schema", schema.id());
+        var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
+        var metadata = storage.getSchemaMetadata();
+        Assertions.assertEquals("blog", metadata.id());
+        Assertions.assertEquals(1, metadata.version());
+    }
 
     @Test
     public void testSaveAndLoad() throws IOException, PersistenceException, InvalidSchemaException {

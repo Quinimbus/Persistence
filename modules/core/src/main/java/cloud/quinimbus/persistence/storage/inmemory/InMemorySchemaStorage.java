@@ -5,9 +5,11 @@ import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.filter.PropertyFilter;
 import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.Metadata;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -21,11 +23,33 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
     private final PersistenceContext context;
 
     private final Map<String, Map<Object, Map<String, Object>>> entities;
+    
+    private final String schemaId;
+    
+    private Long schemaVersion;
+    
+    private final Instant creationTime;
 
     public InMemorySchemaStorage(PersistenceContext context, Schema schema) {
         this.context = context;
         this.entities = schema.entityTypes().values().stream()
                 .collect(Collectors.toMap(EntityType::id, et -> new LinkedHashMap<>()));
+        this.schemaId = schema.id();
+        this.schemaVersion = schema.version();
+        this.creationTime = Instant.now();
+    }
+
+    @Override
+    public Metadata getSchemaMetadata() throws PersistenceException {
+        return new Metadata(this.schemaId, this.schemaVersion, this.creationTime);
+    }
+
+    @Override
+    public void increaseSchemaVersion(Long version) throws PersistenceException {
+       if (this.schemaVersion > version) {
+           throw new PersistenceException("You cannot downgrade the schema version from %d to %d".formatted(this.schemaVersion, version));
+       }
+       this.schemaVersion = version;
     }
 
     @Override
