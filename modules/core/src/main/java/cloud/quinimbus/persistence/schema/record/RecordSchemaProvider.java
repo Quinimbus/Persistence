@@ -110,7 +110,8 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
                 ThrowingStream.of(Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
                         .filter(f -> f.getAnnotation(EntityIdField.class) == null)
                         .map(RecordSchemaProvider::propertyOfField)
-                        .collect(Collectors.toSet()));
+                        .collect(Collectors.toSet()),
+                Set.of());
     }
 
     private static EntityTypeProperty propertyOfField(Field field) throws InvalidSchemaException {

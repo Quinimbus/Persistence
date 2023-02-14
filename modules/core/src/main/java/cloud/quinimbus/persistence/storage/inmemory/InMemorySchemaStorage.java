@@ -6,10 +6,13 @@ import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.filter.PropertyFilter;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.Metadata;
+import cloud.quinimbus.persistence.api.schema.Metadata.MigrationRun;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
+import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorageMigrator;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +32,8 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
     private Long schemaVersion;
     
     private final Instant creationTime;
+    
+    private final Set<MigrationRun> migrationRuns;
 
     public InMemorySchemaStorage(PersistenceContext context, Schema schema) {
         this.context = context;
@@ -37,11 +42,12 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
         this.schemaId = schema.id();
         this.schemaVersion = schema.version();
         this.creationTime = Instant.now();
+        this.migrationRuns = new HashSet<>();
     }
 
     @Override
     public Metadata getSchemaMetadata() throws PersistenceException {
-        return new Metadata(this.schemaId, this.schemaVersion, this.creationTime);
+        return new Metadata(this.schemaId, this.schemaVersion, this.creationTime, Set.copyOf(this.migrationRuns));
     }
 
     @Override
@@ -52,6 +58,16 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
        this.schemaVersion = version;
     }
 
+    @Override
+    public PersistenceSchemaStorageMigrator getMigrator() {
+        return new InMemorySchemaStorageMigrator(this.entities);
+    }
+
+    @Override
+    public void logMigrationRun(String identifier, String entityType, Long schemaVersion, Instant runAt) {
+        this.migrationRuns.add(new cloud.quinimbus.persistence.api.schema.Metadata.MigrationRun(identifier, entityType, schemaVersion, runAt));
+    }
+    
     @Override
     public <K> void save(Entity<K> entity) {
         this.entities.get(entity.getType().id()).put(entity.getId(), entity.asBasicMap());

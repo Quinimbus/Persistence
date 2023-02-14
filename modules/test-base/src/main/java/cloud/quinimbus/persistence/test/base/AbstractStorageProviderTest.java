@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +31,8 @@ public abstract class AbstractStorageProviderTest {
     public abstract Map<String, Object> getParams();
 
     @BeforeEach
-    public void init() {
+    public void init() throws IOException {
+        LogManager.getLogManager().readConfiguration(AbstractStorageProviderTest.class.getResourceAsStream("logging.properties"));
         this.persistenceContext = ServiceLoader.load(PersistenceContext.class).findFirst().get();
     }
 
@@ -48,6 +50,29 @@ public abstract class AbstractStorageProviderTest {
         var metadata = storage.getSchemaMetadata();
         Assertions.assertEquals("blog", metadata.id());
         Assertions.assertEquals(1, metadata.version());
+    }
+    
+    @Test
+    public void testMigration() throws IOException, PersistenceException, InvalidSchemaException {
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var params = new LinkedHashMap<>(this.getParams());
+        params.put("schema", schema.id());
+        var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
+        
+        var entryType = schema.entityTypes().get("entry");
+        var entry = this.persistenceContext.newEntity("first", entryType);
+        entry.setProperty("title", "My first entry");
+        storage.save(entry);
+        
+        schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema_migration.json"), Charset.forName("UTF-8")));
+        this.persistenceContext.upgradeSchema(storage);
+        var metadata = storage.getSchemaMetadata();
+        Assertions.assertEquals(2, metadata.version());
+        Assertions.assertEquals(1, metadata.entityTypeMigrationRuns().size());
+        
+        entryType = schema.entityTypes().get("entry");
+        entry = storage.find(entryType, "first").orElseThrow();
+        Assertions.assertEquals("no sponsor", entry.getProperty("sponsor"));
     }
 
     @Test

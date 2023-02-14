@@ -50,7 +50,7 @@ public class DefaultEntityTest {
                 new EntityTypeProperty<>("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE),
                 new EntityTypeProperty<>("stringlist", new StringPropertyType(), EntityTypeProperty.Structure.LIST),
                 new EntityTypeProperty<>("number", new IntegerPropertyType(), EntityTypeProperty.Structure.SINGLE),
-                new EntityTypeProperty<>("embedded", embeddedType, EntityTypeProperty.Structure.SINGLE)));
+                new EntityTypeProperty<>("embedded", embeddedType, EntityTypeProperty.Structure.SINGLE)), Set.of());
         var properties = Map.<String, Object>of(
                 "string", "Hello World",
                 "stringlist", List.of("a", "b"),

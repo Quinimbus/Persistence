@@ -12,6 +12,7 @@ import cloud.quinimbus.persistence.api.schema.Metadata;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
+import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorageMigrator;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -24,6 +25,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import lombok.AccessLevel;
+import lombok.Getter;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 import org.bson.Document;
 
@@ -34,21 +37,23 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
     private final String SCHEMA_COLLECTION_METADATA_ID = "_qn_schemameta_id";
     
     private final Document SCHEMA_COLLECTION_METADATA_ID_DOCUMENT = new Document(Map.of("_id", SCHEMA_COLLECTION_METADATA_ID));
+    
+    private final String SCHEMA_ENTIYTYPE_MIGRATION_RUNS_COLLECTION_NAME = "_qn_schema_entitytype_migration_runs";
 
+    @Getter(AccessLevel.PROTECTED)
     private final MongoDatabase database;
     
     private final PersistenceContext context;
     
     private final MongoCollection<Document> schemaMetadataCollection;
+    
+    private final MongoCollection<Document> schemaEntityTypeMigrationRunsCollection;
 
     public MongoSchemaStorage(MongoClient client, Schema schema, PersistenceContext context) throws PersistenceException {
         this.database = client.getDatabase(schema.id());
         this.context = context;
-        this.schemaMetadataCollection = Optional.ofNullable(this.database.getCollection(SCHEMA_COLLECTION_NAME))
-                .orElseGet(() -> {
-                    this.database.createCollection(SCHEMA_COLLECTION_NAME);
-                    return this.database.getCollection(SCHEMA_COLLECTION_NAME);
-                });
+        this.schemaMetadataCollection = this.findOrCreateCollection(SCHEMA_COLLECTION_NAME);
+        this.schemaEntityTypeMigrationRunsCollection = this.findOrCreateCollection(SCHEMA_ENTIYTYPE_MIGRATION_RUNS_COLLECTION_NAME);
         var existingSchemaMetadata = this.loadSchemaMetadata();
         if (existingSchemaMetadata.isPresent()) {
             if (!existingSchemaMetadata.get().id().equals(schema.id())) {
@@ -58,7 +63,7 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
                 throw new PersistenceException("The given mongo database already contains a quinimbus schema named %s in version %d, you cannot read it as version %d".formatted(existingSchemaMetadata.get().id(), existingSchemaMetadata.get().version(), schema.version()));
             }
         } else {
-            this.saveSchemaMetadata(new Metadata(schema.id(), schema.version(), Instant.now()));
+            this.saveSchemaMetadata(new Metadata(schema.id(), schema.version(), Instant.now(), Set.of()));
         }
         schema.entityTypes().values()
                 .forEach(et -> {
@@ -69,11 +74,26 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
                 });
     }
     
+    private MongoCollection<Document> findOrCreateCollection(String name) {
+        return Optional.ofNullable(this.database.getCollection(name))
+                .orElseGet(() -> {
+                    this.database.createCollection(name);
+                    return this.database.getCollection(name);
+                });
+    }
+    
     private Optional<Metadata> loadSchemaMetadata() {
         var resultIter = this.schemaMetadataCollection.find(SCHEMA_COLLECTION_METADATA_ID_DOCUMENT).iterator();
         if (resultIter.hasNext()) {
             var result = resultIter.next();
-            return Optional.of(new Metadata(result.getString("schemaId"), result.getLong("schemaVersion"), Instant.parse(result.getString("creationTime"))));
+            var migrationRuns = StreamSupport.stream(this.schemaEntityTypeMigrationRunsCollection.find().spliterator(), false)
+                    .map(d -> new Metadata.MigrationRun(
+                            d.getString("identifier"),
+                            d.getString("entityType"),
+                            d.getLong("schemaVersion"),
+                            Instant.parse(d.getString("runAt"))))
+                    .collect(Collectors.toSet());
+            return Optional.of(new Metadata(result.getString("schemaId"), result.getLong("schemaVersion"), Instant.parse(result.getString("creationTime")), migrationRuns));
         } else {
             return Optional.empty();
         }
@@ -86,9 +106,9 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
                 "schemaVersion", metadata.version(),
                 "creationTime", metadata.creationTime().toString());
         if (this.schemaMetadataCollection.find(SCHEMA_COLLECTION_METADATA_ID_DOCUMENT).iterator().hasNext()) {
-            schemaMetadataCollection.replaceOne(SCHEMA_COLLECTION_METADATA_ID_DOCUMENT, new Document(map));
+            this.schemaMetadataCollection.replaceOne(SCHEMA_COLLECTION_METADATA_ID_DOCUMENT, new Document(map));
         } else {
-            schemaMetadataCollection.insertOne(new Document(map));
+            this.schemaMetadataCollection.insertOne(new Document(map));
         }
     }
 
@@ -104,6 +124,23 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
             throw new PersistenceException("You cannot downgrade the schema version");
         }
         this.saveSchemaMetadata(metadata.withVersion(version));
+    }
+
+    @Override
+    public PersistenceSchemaStorageMigrator getMigrator() {
+        return new MongoSchemaStorageMigrator(this);
+    }
+
+    @Override
+    public void logMigrationRun(String identifier, String entityType, Long schemaVersion, Instant runAt) {
+        this.schemaEntityTypeMigrationRunsCollection.insertOne(
+                new Document(
+                        Map.of(
+                                "_id", "%d_%s_%s".formatted(schemaVersion, entityType, identifier),
+                                "identifier", identifier,
+                                "entityType", entityType,
+                                "schemaVersion", schemaVersion,
+                                "runAt", runAt.toString())));
     }
 
     @Override

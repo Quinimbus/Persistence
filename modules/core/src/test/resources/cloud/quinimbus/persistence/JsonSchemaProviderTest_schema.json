@@ -15,12 +15,22 @@
                 },
                 "category": {
                     "type": {
-                        "ENUM": ["POLITICS", "SPORTS"]
+                        "ENUM": ["UNSORTED", "POLITICS", "SPORTS"]
                     }
                 },
                 "tags": {
                     "type": "STRING",
                     "structure": "LIST"
+                }
+            },
+            "migrations": {
+                "addCategoryField": {
+                    "schemaVersion": 1,
+                    "type": {
+                        "ADD_PROPERTIES": {
+                            "category": "UNSORTED"
+                        }
+                    }
                 }
             }
         }

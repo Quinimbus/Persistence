@@ -1,8 +1,10 @@
 package cloud.quinimbus.persistence;
 
 import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.Schema;
+import cloud.quinimbus.persistence.api.schema.migrations.PropertyAddMigrationType;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
@@ -45,7 +47,7 @@ public class JsonSchemaProviderTest {
                                                 .build(),
                                         EntityTypeProperty.builder()
                                                 .name("category")
-                                                .type(new EnumPropertyType(List.of("POLITICS", "SPORTS")))
+                                                .type(new EnumPropertyType(List.of("UNSORTED", "POLITICS", "SPORTS")))
                                                 .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
                                         EntityTypeProperty.builder()
@@ -53,6 +55,11 @@ public class JsonSchemaProviderTest {
                                                 .type(new StringPropertyType())
                                                 .structure(EntityTypeProperty.Structure.LIST)
                                                 .build()))
+                                .migrations(Set.of(EntityTypeMigration.builder()
+                                        .name("addCategoryField")
+                                        .schemaVersion(1L)
+                                        .type(new PropertyAddMigrationType(Map.of("category", "UNSORTED")))
+                                        .build()))
                                 .build()))
                 .build();
         var provider = new SingleJsonSchemaProvider();

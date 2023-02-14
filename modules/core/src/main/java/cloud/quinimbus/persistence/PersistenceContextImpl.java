@@ -3,6 +3,7 @@ package cloud.quinimbus.persistence;
 import cloud.quinimbus.common.annotations.Provider;
 import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.PersistenceContext;
+import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationException;
@@ -26,6 +27,7 @@ import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import cloud.quinimbus.persistence.entity.DefaultEmbeddedObject;
+import cloud.quinimbus.persistence.migration.Migrations;
 import cloud.quinimbus.persistence.parsers.BooleanParser;
 import cloud.quinimbus.persistence.parsers.EmbeddedParser;
 import cloud.quinimbus.persistence.parsers.EnumParser;
@@ -48,8 +50,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
+import lombok.extern.java.Log;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
+@Log
 public class PersistenceContextImpl implements PersistenceContext {
 
     private final Map<String, Schema> schemas;
@@ -263,5 +267,10 @@ public class PersistenceContextImpl implements PersistenceContext {
         } else {
             throw new IllegalStateException(); // Cannot happen
         }
+    }
+
+    @Override
+    public void upgradeSchema(PersistenceSchemaStorage storage) throws PersistenceException {
+        Migrations.upgradeSchema(storage, this.schemas::get);
     }
 }

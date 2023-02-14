@@ -7,7 +7,7 @@ import lombok.With;
 
 @Builder
 @With
-public record EntityType(String id, Set<EntityTypeProperty> properties) {
+public record EntityType(String id, Set<EntityTypeProperty> properties, Set<EntityTypeMigration> migrations) {
 
     public Optional<EntityTypeProperty> property(String name) {
         return this.properties().stream()

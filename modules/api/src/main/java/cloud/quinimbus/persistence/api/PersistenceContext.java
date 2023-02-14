@@ -74,4 +74,6 @@ public interface PersistenceContext {
     <T extends Record> EntityReader<T> getRecordEntityReader(EntityType type, Class<T> recordClass) throws EntityReaderInitialisationException;
 
     <T extends Record> EntityWriter<T> getRecordEntityWriter(EntityType type, Class<T> recordClass) throws EntityWriterInitialisationException;
+    
+    void upgradeSchema(PersistenceSchemaStorage storage) throws PersistenceException;
 }
