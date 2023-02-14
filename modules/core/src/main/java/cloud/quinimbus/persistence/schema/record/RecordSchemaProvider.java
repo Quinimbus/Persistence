@@ -7,12 +7,15 @@ import cloud.quinimbus.persistence.api.annotation.Embeddable;
 import cloud.quinimbus.persistence.api.annotation.Entity;
 import cloud.quinimbus.persistence.api.annotation.EntityField;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
+import cloud.quinimbus.persistence.api.annotation.FieldAddMigration;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.EntityTypePropertyType;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.schema.Schema;
+import cloud.quinimbus.persistence.api.schema.migrations.PropertyAddMigrationType;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
@@ -105,13 +108,18 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
     }
 
     private static EntityType typeOfRecord(Class<? extends Record> recordClass) throws InvalidSchemaException {
+        var id = Records.idFromRecordClass(recordClass);
         return new EntityType(
-                Records.idFromRecordClass(recordClass),
-                ThrowingStream.of(Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
+                id,
+                propertiesOfRecord(recordClass),
+                migrationsOfRecord(id, recordClass));
+    }
+    
+    private static Set<EntityTypeProperty>propertiesOfRecord(Class<? extends Record> recordClass) throws InvalidSchemaException {
+        return ThrowingStream.of(Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
                         .filter(f -> f.getAnnotation(EntityIdField.class) == null)
                         .map(RecordSchemaProvider::propertyOfField)
-                        .collect(Collectors.toSet()),
-                Set.of());
+                        .collect(Collectors.toSet());
     }
 
     private static EntityTypeProperty propertyOfField(Field field) throws InvalidSchemaException {
@@ -193,5 +201,22 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         } else {
             throw new InvalidSchemaException("The class %s is not a record class".formatted(c.getName()));
         }
+    }
+
+    private static Set<EntityTypeMigration> migrationsOfRecord(String entityId, Class<? extends Record> recordClass) throws InvalidSchemaException {
+        var propertyBasedMigrations = ThrowingStream.of(Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
+                .map(f -> migrationOfField(entityId, f))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+        return propertyBasedMigrations;
+    }
+
+    private static Optional<EntityTypeMigration> migrationOfField(String entityId, Field field) throws InvalidSchemaException {
+        var fieldAdd = field.getAnnotation(FieldAddMigration.class);
+        if (fieldAdd != null) {
+            return Optional.of(new EntityTypeMigration<>("FieldAdd_%s_%s".formatted(entityId, field.getName()), fieldAdd.version(), new PropertyAddMigrationType(Map.of(field.getName(), fieldAdd.value()))));
+        }
+        return Optional.empty();
     }
 }

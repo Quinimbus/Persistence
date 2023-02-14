@@ -11,6 +11,7 @@ module cloud.quinimbus.persistence.core {
     provides PersistenceContext with PersistenceContextImpl;
     provides PersistenceStorageProvider with InMemoryPersistenceStorageProvider;
     provides PersistenceSchemaProvider with SingleJsonSchemaProvider, RecordSchemaProvider;
+    uses PersistenceContext;
     uses PersistenceSchemaProvider;
     uses PersistenceStorageProvider;
     
