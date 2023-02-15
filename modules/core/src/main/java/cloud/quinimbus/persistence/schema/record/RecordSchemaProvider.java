@@ -169,9 +169,12 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         }
         if (Record.class.isAssignableFrom(cls)) {
             if (cls.getAnnotation(Embeddable.class) != null) {
-                return new EmbeddedPropertyType(ThrowingStream.of(Arrays.stream(cls.getDeclaredFields()), InvalidSchemaException.class)
-                        .map(RecordSchemaProvider::propertyOfField)
-                        .collect(Collectors.toSet()));
+                var id = Records.idFromRecordClass(cls);
+                return new EmbeddedPropertyType(
+                        ThrowingStream.of(Arrays.stream(cls.getDeclaredFields()), InvalidSchemaException.class)
+                                .map(RecordSchemaProvider::propertyOfField)
+                                .collect(Collectors.toSet()),
+                        migrationsOfRecord(id, cls));
             }
         }
         throw new InvalidSchemaException("Cannot map class %s to an entity property type".formatted(cls.getName()));

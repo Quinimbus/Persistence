@@ -123,7 +123,8 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
                     var en = on.get("EMBEDDED");
                     if (en instanceof ObjectNode eon) {
                         var properties = AbstractJsonSchemaProvider.this.importProperties(ctxt.getParser().getCodec(), eon);
-                        return new EmbeddedPropertyType(properties);
+                        var migrations = AbstractJsonSchemaProvider.this.importMigrations(ctxt.getParser().getCodec(), eon);
+                        return new EmbeddedPropertyType(properties, migrations);
                     } else {
                         throw new IllegalStateException();
                     }

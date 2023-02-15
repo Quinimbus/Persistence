@@ -45,7 +45,8 @@ public class DefaultEntityTest {
 
     private Entity<String> createTestEntity() {
         var embeddedType = new EmbeddedPropertyType(Set.of(
-                new EntityTypeProperty("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE)));
+                new EntityTypeProperty("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE)),
+                Set.of());
         var type = new EntityType("testEntity", Set.of(
                 new EntityTypeProperty<>("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE),
                 new EntityTypeProperty<>("stringlist", new StringPropertyType(), EntityTypeProperty.Structure.LIST),

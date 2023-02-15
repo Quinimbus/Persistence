@@ -37,6 +37,21 @@
                                 },
                                 "subtext": {
                                     "type": "STRING"
+                                },
+                                "role": {
+                                    "type": {
+                                        "ENUM": ["STAFF", "EDITOR", "GUEST"]
+                                    }
+                                }
+                            },
+                            "migrations": {
+                                "addRoleField": {
+                                    "schemaVersion": 2,
+                                    "type": {
+                                        "ADD_PROPERTIES": {
+                                            "role": "STAFF"
+                                        }
+                                    }
                                 }
                             }
                         }

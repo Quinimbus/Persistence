@@ -2,6 +2,9 @@ package cloud.quinimbus.persistence.test.base;
 
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
+import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
+import cloud.quinimbus.persistence.api.entity.Entity;
+import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
@@ -62,17 +65,24 @@ public abstract class AbstractStorageProviderTest {
         var entryType = schema.entityTypes().get("entry");
         var entry = this.persistenceContext.newEntity("first", entryType);
         entry.setProperty("title", "My first entry");
+        var author = this.persistenceContext.newEmbedded(
+                (EmbeddedPropertyType) entryType.property("author").orElseThrow().type(),
+                entryType,
+                List.of("author"),
+                Map.of("name", "John Doe", "subtext", "The most average guy"));
+        entry.setProperty("author", author);
         storage.save(entry);
         
         schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema_migration.json"), Charset.forName("UTF-8")));
         this.persistenceContext.upgradeSchema(storage);
         var metadata = storage.getSchemaMetadata();
         Assertions.assertEquals(2, metadata.version());
-        Assertions.assertEquals(1, metadata.entityTypeMigrationRuns().size());
+        Assertions.assertEquals(2, metadata.entityTypeMigrationRuns().size());
         
         entryType = schema.entityTypes().get("entry");
         entry = storage.find(entryType, "first").orElseThrow();
         Assertions.assertEquals("no sponsor", entry.getProperty("sponsor"));
+        Assertions.assertEquals("STAFF", entry.<EmbeddedObject>getProperty("author").getProperty("role"));
     }
 
     @Test
