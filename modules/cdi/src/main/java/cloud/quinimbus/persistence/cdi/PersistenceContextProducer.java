@@ -70,5 +70,6 @@ public class PersistenceContextProducer {
                                     .formatted(node.name(), type)));
         var storage = provider.createSchema(this.persistenceContext, node);
         this.persistenceContext.setSchemaStorage(schema, storage);
+        this.persistenceContext.upgradeSchema(storage);
     }
 }
