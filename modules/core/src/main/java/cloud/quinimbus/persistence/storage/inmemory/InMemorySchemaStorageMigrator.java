@@ -32,10 +32,12 @@ public class InMemorySchemaStorageMigrator implements PersistenceSchemaStorageMi
         } else {
             var nextPath = path.subList(1, path.size());
             var embeddedEntity = entity.get(path.get(0));
-            if (embeddedEntity instanceof Map embeddedEntityMap) {
-                setProperty((Map<String, Object>) embeddedEntityMap, field, nextPath, value);
-            } else {
-                throw new PersistenceException("expected a map but got %s".formatted(embeddedEntity.getClass().getName()));
+            if (embeddedEntity != null) {
+                if (embeddedEntity instanceof Map embeddedEntityMap) {
+                    setProperty((Map<String, Object>) embeddedEntityMap, field, nextPath, value);
+                } else {
+                    throw new PersistenceException("expected a map but got %s".formatted(embeddedEntity.getClass().getName()));
+                }
             }
         }
     }
