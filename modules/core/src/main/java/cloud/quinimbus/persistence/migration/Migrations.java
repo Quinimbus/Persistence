@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import lombok.extern.java.Log;
 
@@ -38,7 +37,9 @@ public class Migrations {
                                 Collectors.groupingBy(
                                         EntityTypeMigrationEntry::entityType,
                                         Collectors.toSet())));
-        LongStream.rangeClosed(0, schema.version()).forEach(version -> Migrations.checkMigrations(storage, schemaMeta, schema, version, migrationsPerVersionAndType.get(version)));
+        for (var version = 0L; version <= schema.version(); version++) {
+            Migrations.checkMigrations(storage, schemaMeta, schema, version, migrationsPerVersionAndType.get(version));
+        }
         storage.increaseSchemaVersion(schema.version());
     }
     
@@ -63,25 +64,29 @@ public class Migrations {
         return Stream.empty();
     }
 
-    private static void checkMigrations(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, Map<String, Set<EntityTypeMigrationEntry>> migrations) {
+    private static void checkMigrations(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, Map<String, Set<EntityTypeMigrationEntry>> migrations) throws PersistenceException {
         if (migrations == null || migrations.isEmpty()) {
             log.fine(() -> "[checkMigrations] no migrations needed for schema %s version %d".formatted(schema.id(), version));
             return;
         }
         log.fine(() -> "[checkMigrations] checking for migrations in schema %s for version %d".formatted(schema.id(), version));
-        migrations.entrySet().forEach(e -> checkMigrations(storage, schemaMetadata, schema, version, e.getKey(), e.getValue()));
+        for (var migrationEntry : migrations.entrySet()) {
+            checkMigrations(storage, schemaMetadata, schema, version, migrationEntry.getKey(), migrationEntry.getValue());
+        }
     }
     
-    private static void checkMigrations(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, String entityType, Set<EntityTypeMigrationEntry> migrations) {
+    private static void checkMigrations(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, String entityType, Set<EntityTypeMigrationEntry> migrations) throws PersistenceException {
         if (migrations == null || migrations.isEmpty()) {
             log.fine(() -> "[checkMigrations] no migrations needed for schema %s version %d entity type %s".formatted(schema.id(), version, entityType));
             return;
         }
         log.fine(() -> "[checkMigrations] checking for migrations in schema %s for version %d entity type %s".formatted(schema.id(), version, entityType));
-        migrations.forEach(m -> checkMigration(storage, schemaMetadata, schema, version, entityType, m));
+        for (var m : migrations) {
+            checkMigration(storage, schemaMetadata, schema, version, entityType, m);
+        }
     }
     
-    private static void checkMigration(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, String entityType, EntityTypeMigrationEntry migration) {
+    private static void checkMigration(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, String entityType, EntityTypeMigrationEntry migration) throws PersistenceException {
         log.fine(() -> "[checkMigration] checking for migration %s in schema %s for version %d entity type %s".formatted(migration.migration().name(), schema.id(), version, entityType));
         if (schemaMetadata.entityTypeMigrationRuns().stream().anyMatch(mr -> mr.entityType().equals(entityType) && mr.schemaVersion().equals(version) && mr.identifier().equals(migration.migration().name()))) {
             log.fine("[checkMigration] already run");

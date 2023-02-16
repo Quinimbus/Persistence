@@ -1,5 +1,6 @@
 package cloud.quinimbus.persistence.storage.mongo;
 
+import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.migrations.PropertyAddMigrationType;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorageMigrator;
@@ -17,7 +18,7 @@ public class MongoSchemaStorageMigrator implements PersistenceSchemaStorageMigra
     }
 
     @Override
-    public void runEntityTypeMigration(String entityType, EntityTypeMigration migration, List<String> path) {
+    public void runEntityTypeMigration(String entityType, EntityTypeMigration migration, List<String> path) throws PersistenceException {
         if (migration.type() instanceof PropertyAddMigrationType pamt) {
             if (path.isEmpty()) {
                 this.storage.getDatabase().getCollection(entityType).updateMany(new Document(), new Document(Map.of("$set", pamt.properties())));
