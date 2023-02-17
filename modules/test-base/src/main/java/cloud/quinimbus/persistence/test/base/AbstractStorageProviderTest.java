@@ -3,10 +3,7 @@ package cloud.quinimbus.persistence.test.base;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
-import cloud.quinimbus.persistence.api.entity.Entity;
-import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
-import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import cloud.quinimbus.persistence.common.filter.FilterFactory;
 import java.io.IOException;
@@ -63,26 +60,40 @@ public abstract class AbstractStorageProviderTest {
         var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
         
         var entryType = schema.entityTypes().get("entry");
+        var authorType = entryType.embeddedPropertyType("author").orElseThrow();
+        var commentType = entryType.embeddedPropertyType("comments").orElseThrow();
         var entry = this.persistenceContext.newEntity("first", entryType);
         entry.setProperty("title", "My first entry");
         var author = this.persistenceContext.newEmbedded(
-                (EmbeddedPropertyType) entryType.property("author").orElseThrow().type(),
+                authorType,
                 entryType,
                 List.of("author"),
                 Map.of("name", "John Doe", "subtext", "The most average guy"));
         entry.setProperty("author", author);
+        entry.setProperty("comments", List.of(
+                this.persistenceContext.newEmbedded(
+                        commentType,
+                        entryType,
+                        List.of("comments"),
+                        Map.of("text", "comment 1")),
+                this.persistenceContext.newEmbedded(
+                        commentType,
+                        entryType,
+                        List.of("comments"),
+                        Map.of("text", "comment 1"))));
         storage.save(entry);
         
         schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema_migration.json"), Charset.forName("UTF-8")));
         this.persistenceContext.upgradeSchema(storage);
         var metadata = storage.getSchemaMetadata();
         Assertions.assertEquals(2, metadata.version());
-        Assertions.assertEquals(2, metadata.entityTypeMigrationRuns().size());
+        Assertions.assertEquals(3, metadata.entityTypeMigrationRuns().size());
         
         entryType = schema.entityTypes().get("entry");
         entry = storage.find(entryType, "first").orElseThrow();
         Assertions.assertEquals("no sponsor", entry.getProperty("sponsor"));
         Assertions.assertEquals("STAFF", entry.<EmbeddedObject>getProperty("author").getProperty("role"));
+        Assertions.assertEquals(Instant.parse("2023-02-16T00:00:00Z"), entry.<List<EmbeddedObject>>getProperty("comments").get(0).getProperty("posted"));
     }
 
     @Test
@@ -92,6 +103,8 @@ public abstract class AbstractStorageProviderTest {
         params.put("schema", schema.id());
         var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
         var entryType = schema.entityTypes().get("entry");
+        var authorType = entryType.embeddedPropertyType("author").orElseThrow();
+        var commentType = entryType.embeddedPropertyType("comments").orElseThrow();
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
         firstEntry.setProperty("published", true);
@@ -101,10 +114,7 @@ public abstract class AbstractStorageProviderTest {
         firstEntry.setProperty("readcount", 15);
         firstEntry.setProperty("tags", List.of("election", "politics"));
         firstEntry.setProperty("author", this.persistenceContext.newEmbedded(
-                entryType.properties().stream()
-                        .filter(etp -> etp.name().equals("author"))
-                        .map(etp -> (EmbeddedPropertyType)etp.type())
-                        .findFirst().orElseThrow(),
+                authorType,
                 entryType,
                 List.of("author"),
                 Map.of(
@@ -112,6 +122,17 @@ public abstract class AbstractStorageProviderTest {
                         "subtext", "The first of all authors.")));
         firstEntry.setProperty("ratings", Map.of(
                 "userA", 1, "userB", 2));
+        firstEntry.setProperty("comments", List.of(
+                this.persistenceContext.newEmbedded(
+                        commentType,
+                        entryType,
+                        List.of("comments"),
+                        Map.of("text", "comment 1")),
+                this.persistenceContext.newEmbedded(
+                        commentType,
+                        entryType,
+                        List.of("comments"),
+                        Map.of("text", "comment 1"))));
         storage.save(firstEntry);
         var resultFromStorage = storage.find(entryType, "first").get();
         Assertions.assertEquals(firstEntry, resultFromStorage);

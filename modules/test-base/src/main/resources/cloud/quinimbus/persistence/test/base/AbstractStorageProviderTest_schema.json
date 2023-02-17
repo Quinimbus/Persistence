@@ -45,6 +45,18 @@
                 "ratings": {
                     "type": "INTEGER",
                     "structure": "MAP"
+                },
+                "comments": {
+                    "type": {
+                        "EMBEDDED": {
+                            "properties": {
+                                "text": {
+                                    "type": "STRING"
+                                }
+                            }
+                        }
+                    },
+                    "structure": "LIST"
                 }
             }
         }

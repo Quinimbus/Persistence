@@ -21,7 +21,7 @@ import lombok.extern.java.Log;
 @Log
 public class Migrations {
     
-    private static record EntityTypeMigrationEntry(EntityTypeMigration migration, List<String> path, String entityType) {
+    private static record EntityTypeMigrationEntry(EntityTypeMigration migration, List<String> path, EntityType entityType) {
         
     }
 
@@ -45,13 +45,13 @@ public class Migrations {
     
     private static Stream<EntityTypeMigrationEntry> toMigrationEntries(EntityType type) {
         var directMigrations = type.migrations().stream()
-                .map(m -> new EntityTypeMigrationEntry(m, List.of(), type.id()));
+                .map(m -> new EntityTypeMigrationEntry(m, List.of(), type));
         var embeddedMigrations = type.properties().stream()
-                .flatMap(p -> toMigrationEntries(type.id(), p.name(), p.type(), List.of()));
+                .flatMap(p -> toMigrationEntries(type, p.name(), p.type(), List.of()));
         return Stream.concat(directMigrations, embeddedMigrations);
     }
     
-    private static Stream<EntityTypeMigrationEntry> toMigrationEntries(String parentType, String name, EntityTypePropertyType type, List<String> path) {
+    private static Stream<EntityTypeMigrationEntry> toMigrationEntries(EntityType parentType, String name, EntityTypePropertyType type, List<String> path) {
         if (type instanceof EmbeddedPropertyType embedded) {
             var myPath = new ArrayList<>(path);
             myPath.add(name);
@@ -64,7 +64,7 @@ public class Migrations {
         return Stream.empty();
     }
 
-    private static void checkMigrations(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, Map<String, Set<EntityTypeMigrationEntry>> migrations) throws PersistenceException {
+    private static void checkMigrations(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, Map<EntityType, Set<EntityTypeMigrationEntry>> migrations) throws PersistenceException {
         if (migrations == null || migrations.isEmpty()) {
             log.fine(() -> "[checkMigrations] no migrations needed for schema %s version %d".formatted(schema.id(), version));
             return;
@@ -75,7 +75,7 @@ public class Migrations {
         }
     }
     
-    private static void checkMigrations(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, String entityType, Set<EntityTypeMigrationEntry> migrations) throws PersistenceException {
+    private static void checkMigrations(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, EntityType entityType, Set<EntityTypeMigrationEntry> migrations) throws PersistenceException {
         if (migrations == null || migrations.isEmpty()) {
             log.fine(() -> "[checkMigrations] no migrations needed for schema %s version %d entity type %s".formatted(schema.id(), version, entityType));
             return;
@@ -86,14 +86,14 @@ public class Migrations {
         }
     }
     
-    private static void checkMigration(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, String entityType, EntityTypeMigrationEntry migration) throws PersistenceException {
+    private static void checkMigration(PersistenceSchemaStorage storage, Metadata schemaMetadata, Schema schema, long version, EntityType entityType, EntityTypeMigrationEntry migration) throws PersistenceException {
         log.fine(() -> "[checkMigration] checking for migration %s in schema %s for version %d entity type %s".formatted(migration.migration().name(), schema.id(), version, entityType));
-        if (schemaMetadata.entityTypeMigrationRuns().stream().anyMatch(mr -> mr.entityType().equals(entityType) && mr.schemaVersion().equals(version) && mr.identifier().equals(migration.migration().name()))) {
+        if (schemaMetadata.entityTypeMigrationRuns().stream().anyMatch(mr -> mr.entityType().equals(entityType.id()) && mr.schemaVersion().equals(version) && mr.identifier().equals(migration.migration().name()))) {
             log.fine("[checkMigration] already run");
         } else {
             log.fine("[checkMigration] not yet run, running now");
             storage.getMigrator().runEntityTypeMigration(entityType, migration.migration(), migration.path());
-            storage.logMigrationRun(migration.migration().name(), entityType, version, Instant.now());
+            storage.logMigrationRun(migration.migration().name(), entityType.id(), version, Instant.now());
         }
     }
 }
