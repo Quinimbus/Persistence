@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,32 +37,37 @@ public class FilterByRecordRepositoryMethodTest {
         Optional<BlogEntry> findOneByCategory(String category);
     }
     
-    @Test
-    public void testFiltering() throws InvalidSchemaException, InvalidRepositoryDefinitionException {
+    private BlogEntryRepository entryRepository;
+    
+    @BeforeEach
+    public void init() throws InvalidSchemaException, InvalidRepositoryDefinitionException {
         var ctx = ServiceLoader.load(PersistenceContext.class).findFirst().get();
         ctx.importRecordSchema(BlogEntry.class);
         ctx.setInMemorySchemaStorage("crudblog");
 
         var factory = new RepositoryFactory(ctx);
-        var repository = factory.createRepositoryInstance(BlogEntryRepository.class);
+        this.entryRepository = factory.createRepositoryInstance(BlogEntryRepository.class);
+    }
+    
+    @Test
+    public void testFiltering() throws InvalidSchemaException, InvalidRepositoryDefinitionException {
+        this.entryRepository.save(new BlogEntry("first", "My first entry", "sports", true));
+        this.entryRepository.save(new BlogEntry("second", "My second entry", "politics", true));
+        this.entryRepository.save(new BlogEntry("third", "My third entry", "sports", false));
         
-        repository.save(new BlogEntry("first", "My first entry", "sports", true));
-        repository.save(new BlogEntry("second", "My second entry", "politics", true));
-        repository.save(new BlogEntry("third", "My third entry", "sports", false));
-        
-        var filtered = repository.findFiltered(new CategoryFilter("sports", true));
+        var filtered = this.entryRepository.findFiltered(new CategoryFilter("sports", true));
         assertEquals(1, filtered.size());
         assertEquals("first", filtered.get(0).id());
         
-        filtered = repository.findByCategory("politics");
+        filtered = this.entryRepository.findByCategory("politics");
         assertEquals(1, filtered.size());
         assertEquals("second", filtered.get(0).id());
         
-        filtered = repository.findAllByCategory("politics").toList();
+        filtered = this.entryRepository.findAllByCategory("politics").toList();
         assertEquals(1, filtered.size());
         assertEquals("second", filtered.get(0).id());
         
-        filtered = repository.findOneByCategory("politics").stream().toList();
+        filtered = this.entryRepository.findOneByCategory("politics").stream().toList();
         assertEquals(1, filtered.size());
         assertEquals("second", filtered.get(0).id());
     }
