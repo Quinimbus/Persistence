@@ -17,6 +17,7 @@ import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import cloud.quinimbus.persistence.entity.reader.RecordEntityReader;
 import cloud.quinimbus.persistence.entity.writer.RecordEntityWriter;
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
+import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
@@ -36,6 +37,7 @@ import cloud.quinimbus.persistence.parsers.LocalDateParser;
 import cloud.quinimbus.persistence.parsers.StringParser;
 import cloud.quinimbus.persistence.parsers.TimestampParser;
 import cloud.quinimbus.persistence.parsers.ValueParser;
+import cloud.quinimbus.persistence.records.RecordEntityRegistryImpl;
 import cloud.quinimbus.persistence.schema.json.SingleJsonSchemaProvider;
 import cloud.quinimbus.persistence.schema.record.RecordSchemaProvider;
 import cloud.quinimbus.persistence.storage.inmemory.InMemorySchemaStorage;
@@ -63,12 +65,15 @@ public class PersistenceContextImpl implements PersistenceContext {
     private final Map<String, PersistenceSchemaProvider> schemaProviders;
 
     private final Map<String, PersistenceStorageProvider<? extends PersistenceSchemaStorage>> schemaStorageProviders;
+    
+    private final RecordEntityRegistryImpl recordEntityRegistry;
 
     public PersistenceContextImpl() {
         this.schemas = new LinkedHashMap<>();
         this.schemaStorages = new LinkedHashMap<>();
         this.schemaProviders = new LinkedHashMap<>();
         this.schemaStorageProviders = new LinkedHashMap<>();
+        this.recordEntityRegistry = new RecordEntityRegistryImpl();
         ServiceLoader.load(PersistenceSchemaProvider.class).forEach(sp -> {
             var providerAnno = sp.getClass().getAnnotation(Provider.class);
             if (providerAnno == null) {
@@ -179,6 +184,9 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     @Override
     public Schema importRecordSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException {
+        for (var recordClass : recordClasses) {
+            this.recordEntityRegistry.register(recordClass);
+        }
         var schema = ThrowingOptional.ofOptional(this.getSchemaProvider("record"), InvalidSchemaException.class)
                 .map(p -> (RecordSchemaProvider)p)
                 .map(p -> p.importSchema(recordClasses))
@@ -200,7 +208,7 @@ public class PersistenceContextImpl implements PersistenceContext {
         if (!recordClass.isRecord()) {
             throw new IllegalArgumentException("Type %s is no record".formatted(recordClass.getName()));
         }
-        return new RecordEntityWriter(type, recordClass);
+        return new RecordEntityWriter(type, recordClass, this.recordEntityRegistry.getIdField(recordClass));
     }
 
     private Object parse(EntityType parentType, List<String> parentPath, EntityTypeProperty property, Map.Entry<String, Object> e) throws UnparseableValueException {
@@ -272,5 +280,10 @@ public class PersistenceContextImpl implements PersistenceContext {
     @Override
     public void upgradeSchema(PersistenceSchemaStorage storage) throws PersistenceException {
         Migrations.upgradeSchema(storage, this.schemas::get);
+    }
+
+    @Override
+    public RecordEntityRegistry getRecordEntityRegistry() {
+        return this.recordEntityRegistry;
     }
 }

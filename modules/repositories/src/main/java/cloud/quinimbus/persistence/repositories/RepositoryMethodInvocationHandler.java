@@ -6,9 +6,11 @@ import cloud.quinimbus.persistence.api.annotation.EntityTypeClass;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
+import cloud.quinimbus.reflection.GenericMethod;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -31,6 +33,12 @@ public abstract class RepositoryMethodInvocationHandler {
     
     @Getter(AccessLevel.PROTECTED)
     private final EntityType entityType;
+    
+    @Getter(AccessLevel.PROTECTED)
+    private final Class<? extends Record> owningTypeRecord;
+    
+    @Getter(AccessLevel.PROTECTED)
+    private final Function<Record, Object> owningTypeIdGetter;
 
     public RepositoryMethodInvocationHandler(Class<?> iface, Method method, PersistenceContext persistenceContext) throws InvalidRepositoryDefinitionException {
         this.iface = iface;
@@ -55,6 +63,14 @@ public abstract class RepositoryMethodInvocationHandler {
                                 .orElseThrow(() ->
                                         new InvalidRepositoryDefinitionException("Cannot find the entity type %s in the schema %s"
                                                 .formatted(typeId, schema.id())));
+            if (this.entityType.owningEntity().isPresent()) {
+                var genericMethod = new GenericMethod(iface, this.method);
+                this.owningTypeRecord = (Class<? extends Record>) genericMethod.getActualParameterType(0);
+                this.owningTypeIdGetter = (Function<Record, Object>) persistenceContext.getRecordEntityRegistry().getIdValueGetter(this.owningTypeRecord);
+            } else {
+                this.owningTypeRecord = null;
+                this.owningTypeIdGetter = null;
+            }
         } else {
             throw new IllegalArgumentException("Just record classes are supported at the moment");
         }

@@ -69,5 +69,10 @@
             <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>common-annotations</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

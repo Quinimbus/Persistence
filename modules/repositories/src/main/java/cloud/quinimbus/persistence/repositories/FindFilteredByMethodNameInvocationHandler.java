@@ -28,8 +28,14 @@ public class FindFilteredByMethodNameInvocationHandler extends RepositoryMethodI
 
     public FindFilteredByMethodNameInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
-        if (m.getParameterCount() != 1) {
-            throw new InvalidRepositoryDefinitionException("The %s method should have exactly one parameter".formatted(m.getName()));
+        if (this.getEntityType().owningEntity().isEmpty()) {
+            if (m.getParameterCount() != 1) {
+                throw new InvalidRepositoryDefinitionException("The %s method should have exactly one parameter".formatted(m.getName()));
+            }
+        } else {
+            if (m.getParameterCount() != 2) {
+                throw new InvalidRepositoryDefinitionException("The %s method should have exactly two parameters for weak entities".formatted(m.getName()));
+            }
         }
         var matcher = FIND_METHOD_NAME_PATTERN.matcher(m.getName());
         if (!matcher.matches()) {
@@ -68,13 +74,27 @@ public class FindFilteredByMethodNameInvocationHandler extends RepositoryMethodI
 
     @Override
     public Object invoke(Object proxy, Object[] args) throws Throwable {
+        Set<PropertyFilter> filters;
+        if (getEntityType().owningEntity().isEmpty()) {
+            filters = Set.of(
+                    FilterFactory.filterEquals(
+                            this.propertyName,
+                            args[0]));
+        } else {
+            var owner = this.getOwningTypeRecord().cast(args[0]);
+            var ownerId = this.getOwningTypeIdGetter().apply(owner);
+            filters = Set.of(
+                    FilterFactory.filterEquals(
+                            this.propertyName,
+                            args[1]),
+                    FilterFactory.filterEquals(
+                            getEntityType().owningEntity().orElseThrow().field(),
+                            ownerId));
+        }
+        
         var resultStream = this.getSchemaStorage().findFiltered(
                 this.getEntityType(),
-                Set.of(
-                        new FilterFactory.DefaultPropertyFilter(
-                                this.propertyName,
-                                PropertyFilter.Operator.EQUALS,
-                                args[0])));
+                filters);
         return switch(this.returnType) {
             case LIST -> resultStream.map(this.entityWriter::write).collect(toList());
             case STREAM -> resultStream.map(this.entityWriter::write).collect(toList()).stream();

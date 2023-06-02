@@ -19,7 +19,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import name.falgout.jeffrey.throwing.ThrowingSupplier;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 public class AbstractRecordWriter<T extends Record> {
@@ -32,10 +31,10 @@ public class AbstractRecordWriter<T extends Record> {
 
     private final List<Function<Object, Object>> constructorParameterValueWriters;
 
-    public AbstractRecordWriter(Class<T> recordClass, Set<EntityTypeProperty> properties, ThrowingSupplier<String, EntityWriterInitialisationException> idField) throws EntityWriterInitialisationException {
+    public AbstractRecordWriter(Class<T> recordClass, Set<EntityTypeProperty> properties, String idField) throws EntityWriterInitialisationException {
         this.recordClass = recordClass;
         this.constructor = findConstructor(recordClass);
-        this.constructorParameterGetters = createConstructorParameterGetters(this.constructor, idField.get());
+        this.constructorParameterGetters = createConstructorParameterGetters(this.constructor, idField);
         this.constructorParameterValueWriters = createConstructorParameterValueWriters(this.constructor, properties, recordClass);
     }
 

@@ -4,6 +4,7 @@ open module cloud.quinimbus.persistence.api {
     exports cloud.quinimbus.persistence.api.annotation;
     exports cloud.quinimbus.persistence.api.entity;
     exports cloud.quinimbus.persistence.api.filter;
+    exports cloud.quinimbus.persistence.api.records;
     exports cloud.quinimbus.persistence.api.schema;
     exports cloud.quinimbus.persistence.api.schema.migrations;
     exports cloud.quinimbus.persistence.api.schema.properties;

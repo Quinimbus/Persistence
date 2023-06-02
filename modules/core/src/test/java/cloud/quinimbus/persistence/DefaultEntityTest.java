@@ -13,6 +13,7 @@ import cloud.quinimbus.persistence.entity.DefaultEmbeddedObject;
 import cloud.quinimbus.persistence.entity.DefaultEntity;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,7 @@ public class DefaultEntityTest {
         var embeddedType = new EmbeddedPropertyType(Set.of(
                 new EntityTypeProperty("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE)),
                 Set.of());
-        var type = new EntityType("testEntity", Set.of(
+        var type = new EntityType("testEntity", Optional.empty(), Set.of(
                 new EntityTypeProperty<>("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE),
                 new EntityTypeProperty<>("stringlist", new StringPropertyType(), EntityTypeProperty.Structure.LIST),
                 new EntityTypeProperty<>("number", new IntegerPropertyType(), EntityTypeProperty.Structure.SINGLE),

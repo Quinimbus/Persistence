@@ -29,4 +29,8 @@ public class FilterFactory {
             throw new PersistenceException("Failed to analyze the filter record type " + record.getClass().getName(), ex);
         }
     }
+    
+    public static PropertyFilter filterEquals(String property, Object value) {
+        return new DefaultPropertyFilter(property, PropertyFilter.Operator.EQUALS, value);
+    }
 }

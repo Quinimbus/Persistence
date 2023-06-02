@@ -8,7 +8,11 @@ import lombok.With;
 
 @Builder
 @With
-public record EntityType(String id, Set<EntityTypeProperty> properties, Set<EntityTypeMigration> migrations) implements StructuredObjectType  {
+public record EntityType(String id, Optional<OwningEntityTypeRef> owningEntity, Set<EntityTypeProperty> properties, Set<EntityTypeMigration> migrations) implements StructuredObjectType {
+    
+    public static record OwningEntityTypeRef(String id, String field) {
+        
+    }
 
     public Optional<EntityTypeProperty> property(String name) {
         return this.properties().stream()

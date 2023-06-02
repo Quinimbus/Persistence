@@ -1,5 +1,6 @@
 package cloud.quinimbus.persistence.schema.record;
 
+import cloud.quinimbus.common.annotations.modelling.Owner;
 import cloud.quinimbus.common.annotations.Provider;
 import cloud.quinimbus.common.tools.Records;
 import cloud.quinimbus.config.api.ConfigNode;
@@ -111,6 +112,7 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         var id = Records.idFromRecordClass(recordClass);
         return new EntityType(
                 id,
+                owningEntityTypeOfRecord(recordClass),
                 propertiesOfRecord(recordClass),
                 migrationsOfRecord(id, recordClass));
     }
@@ -221,5 +223,10 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
             return Optional.of(new EntityTypeMigration<>("FieldAdd_%s_%s".formatted(entityId, field.getName()), fieldAdd.version(), new PropertyAddMigrationType(Map.of(field.getName(), fieldAdd.value()))));
         }
         return Optional.empty();
+    }
+    
+    private static Optional<EntityType.OwningEntityTypeRef> owningEntityTypeOfRecord(Class<? extends Record> recordClass) {
+        return Optional.ofNullable(recordClass.getDeclaredAnnotation(Owner.class))
+                .map(a -> new EntityType.OwningEntityTypeRef(Records.idFromRecordClass(a.owningEntity()), a.field()));
     }
 }

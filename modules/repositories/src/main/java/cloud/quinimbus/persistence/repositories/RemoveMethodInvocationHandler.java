@@ -7,8 +7,14 @@ public class RemoveMethodInvocationHandler extends RepositoryMethodInvocationHan
 
     public RemoveMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
-        if (m.getParameterCount() != 1) {
-            throw new InvalidRepositoryDefinitionException("The remove method should only have one parameter");
+        if (getEntityType().owningEntity().isEmpty()) {
+            if (m.getParameterCount() != 1) {
+                throw new InvalidRepositoryDefinitionException("The remove method should have one parameter");
+            }
+        } else {
+            if (m.getParameterCount() != 2) {
+                throw new InvalidRepositoryDefinitionException("The remove method should have two parameters for weak entity types");
+            }
         }
         if (!void.class.equals(m.getReturnType())) {
             throw new InvalidRepositoryDefinitionException("The remove method has to be void");

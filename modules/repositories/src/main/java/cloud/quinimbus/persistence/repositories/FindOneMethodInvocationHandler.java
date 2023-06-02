@@ -12,8 +12,14 @@ public class FindOneMethodInvocationHandler extends RepositoryMethodInvocationHa
 
     public FindOneMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
-        if (m.getParameterCount() != 1) {
-            throw new InvalidRepositoryDefinitionException("The findOne method should only have one parameter");
+        if (getEntityType().owningEntity().isEmpty()) {
+            if (m.getParameterCount() != 1) {
+                throw new InvalidRepositoryDefinitionException("The findOne method should have one parameter");
+            }
+        } else {
+            if (m.getParameterCount() != 2) {
+                throw new InvalidRepositoryDefinitionException("The findOne method should have two parameters for weak entities");
+            }
         }
         var returnType = m.getReturnType();
         if (Optional.class.equals(returnType)) {
@@ -37,8 +43,17 @@ public class FindOneMethodInvocationHandler extends RepositoryMethodInvocationHa
 
     @Override
     public Object invoke(Object proxy, Object[] args) throws Throwable {
-        var key = args[0];
-        return this.getSchemaStorage().find(this.getEntityType(), key)
-                .map(this.entityWriter::write);
+        if (getEntityType().owningEntity().isEmpty()) {
+            var key = args[0];
+            return this.getSchemaStorage().find(this.getEntityType(), key)
+                    .map(this.entityWriter::write);
+        } else {
+            var owner = this.getOwningTypeRecord().cast(args[0]);
+            var ownerId = this.getOwningTypeIdGetter().apply(owner);
+            var key = args[1];
+            return this.getSchemaStorage().find(this.getEntityType(), key)
+                    .filter(e -> e.getProperty(this.getEntityType().owningEntity().get().field()).equals(ownerId))
+                    .map(this.entityWriter::write);
+        }
     }
 }

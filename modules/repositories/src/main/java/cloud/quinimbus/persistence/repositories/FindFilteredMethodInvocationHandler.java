@@ -6,6 +6,7 @@ import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationExceptio
 import cloud.quinimbus.persistence.api.filter.PropertyFilter;
 import cloud.quinimbus.persistence.common.filter.FilterFactory;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,12 +20,19 @@ public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocat
 
     public FindFilteredMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
-        if (m.getParameterCount() != 1) {
-            throw new InvalidRepositoryDefinitionException("The findFiltered method should have exactly one parameter");
+        if (this.getEntityType().owningEntity().isEmpty()) {
+            if (m.getParameterCount() != 1) {
+                throw new InvalidRepositoryDefinitionException("The findFiltered method should have exactly one parameter");
+            }
+            this.parameterType = m.getParameterTypes()[0];
+        } else {
+            if (m.getParameterCount() != 2) {
+                throw new InvalidRepositoryDefinitionException("The findFiltered method should have exactly two parameters for weak entities");
+            }
+            this.parameterType = m.getParameterTypes()[1];
         }
-        this.parameterType = m.getParameterTypes()[0];
         if (!Map.class.isAssignableFrom(this.parameterType) && !this.parameterType.isRecord()) {
-            throw new InvalidRepositoryDefinitionException("The findFiltered method should have exactly one parameter of type Map or one parameter with a record type");
+            throw new InvalidRepositoryDefinitionException("The last parameter of the findFiltered method should be of type Map or be a record type");
         }
         var returnType = m.getReturnType();
         if (List.class.equals(returnType)) {
@@ -47,7 +55,7 @@ public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocat
 
     @Override
     public Object invoke(Object proxy, Object[] args) throws Throwable {
-        var properties = args[0];
+        var properties = args[getEntityType().owningEntity().isEmpty() ? 0 : 1];
         Set<? extends PropertyFilter> filters;
         if (Map.class.isAssignableFrom(this.parameterType)) {
             filters = FilterFactory.fromMap((Map<String, Object>) properties);
@@ -56,8 +64,20 @@ public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocat
         } else {
             throw new IllegalArgumentException("unknown parameter type: " + this.parameterType.getName());
         }
-        return this.getSchemaStorage().findFiltered(this.getEntityType(), filters)
-                .map(this.entityWriter::write)
-                .collect(Collectors.toList());
+        if (getEntityType().owningEntity().isEmpty()) {
+            return this.getSchemaStorage().findFiltered(this.getEntityType(), filters)
+                    .map(this.entityWriter::write)
+                    .collect(Collectors.toList());
+        } else {
+            var owner = this.getOwningTypeRecord().cast(args[0]);
+            var ownerId = this.getOwningTypeIdGetter().apply(owner);
+            var extendedFilters = new HashSet<PropertyFilter>(filters);
+            extendedFilters.add(FilterFactory.filterEquals(
+                            this.getEntityType().owningEntity().orElseThrow().field(),
+                            ownerId));
+            return this.getSchemaStorage().findFiltered(this.getEntityType(), extendedFilters)
+                    .map(this.entityWriter::write)
+                    .collect(Collectors.toList());
+        }
     }
 }

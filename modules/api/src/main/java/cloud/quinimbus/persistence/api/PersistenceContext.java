@@ -9,6 +9,7 @@ import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationExceptio
 import cloud.quinimbus.persistence.api.entity.EntityWriter;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
+import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.schema.Schema;
@@ -76,4 +77,6 @@ public interface PersistenceContext {
     <T extends Record> EntityWriter<T> getRecordEntityWriter(EntityType type, Class<T> recordClass) throws EntityWriterInitialisationException;
     
     void upgradeSchema(PersistenceSchemaStorage storage) throws PersistenceException;
+    
+    RecordEntityRegistry getRecordEntityRegistry();
 }
