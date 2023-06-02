@@ -2,6 +2,7 @@ package cloud.quinimbus.persistence;
 
 import cloud.quinimbus.persistence.api.annotation.Embeddable;
 import cloud.quinimbus.persistence.api.annotation.EntityField;
+import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationException;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
 import cloud.quinimbus.persistence.entity.reader.RecordEntityReader;
@@ -33,7 +34,7 @@ public class RecordSchemaReadWriteTest {
     }
 
     public static record BlogEntry(
-            String id,
+            @EntityIdField String id,
             String title,
             Boolean published,
             Instant created,

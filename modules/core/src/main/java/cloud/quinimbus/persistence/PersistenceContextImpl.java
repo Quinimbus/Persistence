@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import lombok.extern.java.Log;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
@@ -65,15 +66,12 @@ public class PersistenceContextImpl implements PersistenceContext {
     private final Map<String, PersistenceSchemaProvider> schemaProviders;
 
     private final Map<String, PersistenceStorageProvider<? extends PersistenceSchemaStorage>> schemaStorageProviders;
-    
-    private final RecordEntityRegistryImpl recordEntityRegistry;
 
     public PersistenceContextImpl() {
         this.schemas = new LinkedHashMap<>();
         this.schemaStorages = new LinkedHashMap<>();
         this.schemaProviders = new LinkedHashMap<>();
         this.schemaStorageProviders = new LinkedHashMap<>();
-        this.recordEntityRegistry = new RecordEntityRegistryImpl();
         ServiceLoader.load(PersistenceSchemaProvider.class).forEach(sp -> {
             var providerAnno = sp.getClass().getAnnotation(Provider.class);
             if (providerAnno == null) {
@@ -184,9 +182,6 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     @Override
     public Schema importRecordSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException {
-        for (var recordClass : recordClasses) {
-            this.recordEntityRegistry.register(recordClass);
-        }
         var schema = ThrowingOptional.ofOptional(this.getSchemaProvider("record"), InvalidSchemaException.class)
                 .map(p -> (RecordSchemaProvider)p)
                 .map(p -> p.importSchema(recordClasses))
@@ -208,7 +203,7 @@ public class PersistenceContextImpl implements PersistenceContext {
         if (!recordClass.isRecord()) {
             throw new IllegalArgumentException("Type %s is no record".formatted(recordClass.getName()));
         }
-        return new RecordEntityWriter(type, recordClass, this.recordEntityRegistry.getIdField(recordClass));
+        return new RecordEntityWriter(type, recordClass, this.getRecordEntityRegistry().getIdField(recordClass));
     }
 
     private Object parse(EntityType parentType, List<String> parentPath, EntityTypeProperty property, Map.Entry<String, Object> e) throws UnparseableValueException {
@@ -283,7 +278,8 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
+    @Deprecated
     public RecordEntityRegistry getRecordEntityRegistry() {
-        return this.recordEntityRegistry;
+        return ((RecordSchemaProvider)this.schemaProviders.get("record")).getRecordEntityRegistry();
     }
 }

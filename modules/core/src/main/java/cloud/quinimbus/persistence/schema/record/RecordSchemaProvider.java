@@ -9,6 +9,7 @@ import cloud.quinimbus.persistence.api.annotation.Entity;
 import cloud.quinimbus.persistence.api.annotation.EntityField;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.annotation.FieldAddMigration;
+import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
@@ -24,6 +25,7 @@ import cloud.quinimbus.persistence.api.schema.properties.IntegerPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
+import cloud.quinimbus.persistence.records.RecordEntityRegistryImpl;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -39,6 +41,16 @@ import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 @Provider(name = "Record classes schema provider", alias = "record", priority = 0)
 public class RecordSchemaProvider implements PersistenceSchemaProvider {
+    
+    private final RecordEntityRegistryImpl recordEntityRegistry;
+
+    public RecordSchemaProvider() {
+        this.recordEntityRegistry = new RecordEntityRegistryImpl();
+    }
+
+    public RecordEntityRegistry getRecordEntityRegistry() {
+        return recordEntityRegistry;
+    }
 
     public Schema importSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException {
         return this.importSchema(Arrays.stream(recordClasses));
@@ -78,6 +90,7 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
 
     public Schema importSchema(String id, Long version, ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses) throws InvalidSchemaException {
         var entityTypes = recordClasses
+                .peek(this.recordEntityRegistry::register)
                 .map(RecordSchemaProvider::typeOfRecord)
                 .collect(Collectors.toMap(et -> et.id(), et -> et));
         return new Schema(id, entityTypes, version);
