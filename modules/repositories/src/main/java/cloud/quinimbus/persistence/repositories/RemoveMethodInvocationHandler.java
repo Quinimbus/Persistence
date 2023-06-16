@@ -1,6 +1,7 @@
 package cloud.quinimbus.persistence.repositories;
 
 import cloud.quinimbus.persistence.api.PersistenceContext;
+import cloud.quinimbus.persistence.api.PersistenceException;
 import java.lang.reflect.Method;
 
 public class RemoveMethodInvocationHandler extends RepositoryMethodInvocationHandler {
@@ -24,6 +25,9 @@ public class RemoveMethodInvocationHandler extends RepositoryMethodInvocationHan
     @Override
     public Object invoke(Object proxy, Object[] args) throws Throwable {
         var entityId = args[0];
+        if (entityId == null) {
+            throw new PersistenceException("The id may not be null");
+        }
         this.getSchemaStorage().remove(this.getEntityType(), entityId);
         return null;
     }

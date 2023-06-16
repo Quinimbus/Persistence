@@ -1,6 +1,7 @@
 package cloud.quinimbus.persistence.repositories;
 
 import cloud.quinimbus.persistence.api.PersistenceContext;
+import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.EntityWriter;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
 import java.lang.reflect.Method;
@@ -45,12 +46,18 @@ public class FindOneMethodInvocationHandler extends RepositoryMethodInvocationHa
     public Object invoke(Object proxy, Object[] args) throws Throwable {
         if (getEntityType().owningEntity().isEmpty()) {
             var key = args[0];
+            if (key == null) {
+                throw new PersistenceException("The id may not be null");
+            }
             return this.getSchemaStorage().find(this.getEntityType(), key)
                     .map(this.entityWriter::write);
         } else {
             var owner = this.getOwningTypeRecord().cast(args[0]);
             var ownerId = this.getOwningTypeIdGetter().apply(owner);
             var key = args[1];
+            if (key == null) {
+                throw new PersistenceException("The id may not be null");
+            }
             return this.getSchemaStorage().find(this.getEntityType(), key)
                     .filter(e -> e.getProperty(this.getEntityType().owningEntity().get().field()).equals(ownerId))
                     .map(this.entityWriter::write);
