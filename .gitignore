@@ -25,3 +25,4 @@ hs_err_pid*
 /modules/*/target/
 /modules/*/nbproject/
 /target/
+nb*
