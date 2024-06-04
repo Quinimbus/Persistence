@@ -3,6 +3,7 @@ package cloud.quinimbus.persistence.test.base;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
+import cloud.quinimbus.persistence.api.lifecycle.EntityPostSaveEvent;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import cloud.quinimbus.persistence.common.filter.FilterFactory;
@@ -57,7 +58,7 @@ public abstract class AbstractStorageProviderTest {
         var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
+        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         
         var entryType = schema.entityTypes().get("entry");
         var authorType = entryType.embeddedPropertyType("author").orElseThrow();
@@ -101,7 +102,7 @@ public abstract class AbstractStorageProviderTest {
         var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
+        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
         var authorType = entryType.embeddedPropertyType("author").orElseThrow();
         var commentType = entryType.embeddedPropertyType("comments").orElseThrow();
@@ -143,7 +144,7 @@ public abstract class AbstractStorageProviderTest {
         var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
+        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
@@ -179,7 +180,7 @@ public abstract class AbstractStorageProviderTest {
         var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
+        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
@@ -204,5 +205,36 @@ public abstract class AbstractStorageProviderTest {
         var sportsEntries = storage.findFiltered(entryType, FilterFactory.fromMap(Map.of("category", "SPORTS"))).collect(Collectors.toList());
         Assertions.assertEquals(1, sportsEntries.size());
         Assertions.assertEquals(secondEntry, sportsEntries.get(0));
+    }
+    
+    @Test
+    public void testLifecycleEvents() throws IOException, PersistenceException, InvalidSchemaException {
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var params = new LinkedHashMap<>(this.getParams());
+        params.put("schema", schema.id());
+        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
+        var entryType = schema.entityTypes().get("entry");
+        this.persistenceContext.onLifecycleEvent(schema.id(), EntityPostSaveEvent.class, entryType, e -> {
+            System.out.println("lifecycle! " + e.toString());
+            var entity = e.entity();
+            if (entity.getProperty("created") == null) {
+                entity.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
+                try {
+                    storage.save(entity);
+                } catch (PersistenceException ex) {
+                    throw new IllegalStateException(ex);
+                }
+            }
+        });
+        var firstEntry = this.persistenceContext.newEntity("first", entryType);
+        firstEntry.setProperty("title", "My first entry");
+        firstEntry.setProperty("published", true);
+        firstEntry.setProperty("publishDate", LocalDate.now());
+        firstEntry.setProperty("category", "POLITICS");
+        firstEntry.setProperty("readcount", 15);
+        firstEntry.setProperty("tags", List.of("election", "politics"));
+        storage.save(firstEntry);
+        var loadedEntry = storage.find(entryType, "first").orElseThrow();
+        Assertions.assertNotNull(loadedEntry.getProperty("created"));
     }
 }

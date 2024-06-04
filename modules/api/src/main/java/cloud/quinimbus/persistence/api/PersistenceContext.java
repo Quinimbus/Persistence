@@ -9,6 +9,7 @@ import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationExceptio
 import cloud.quinimbus.persistence.api.entity.EntityWriter;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
+import cloud.quinimbus.persistence.api.lifecycle.LifecycleEvent;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
@@ -21,6 +22,7 @@ import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * The persistence context is the central object for using Quinimbus Persistence.
@@ -54,9 +56,9 @@ public interface PersistenceContext {
 
     Optional<PersistenceSchemaStorage> getSchemaStorage(String id);
 
-    void setSchemaStorage(String id, PersistenceSchemaStorage storage);
+    PersistenceSchemaStorage setSchemaStorage(String id, PersistenceSchemaStorage storage);
 
-    void setInMemorySchemaStorage(String id);
+    PersistenceSchemaStorage setInMemorySchemaStorage(String id);
 
     <K> Entity<K> newEntity(K id, EntityType type);
 
@@ -79,4 +81,8 @@ public interface PersistenceContext {
     void upgradeSchema(PersistenceSchemaStorage storage) throws PersistenceException;
     
     RecordEntityRegistry getRecordEntityRegistry();
+    
+    <T extends LifecycleEvent> void onLifecycleEvent(String schema, Class<T> eventType, EntityType type, Consumer<T> consumer);
+    
+    <T extends LifecycleEvent> void onLifecycleEvent(String schema, Class<T> eventType, String typeId, Consumer<T> consumer);
 }

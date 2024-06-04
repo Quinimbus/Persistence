@@ -12,9 +12,11 @@ import java.util.function.Function;
 public class RecordEntityRegistryImpl implements RecordEntityRegistry {
     
     private final Map<Class<? extends Record>, String> idFields;
+    private final Map<String, Class<? extends Record>> recordClasses;
 
     public RecordEntityRegistryImpl() {
         this.idFields = new LinkedHashMap<>();
+        this.recordClasses = new LinkedHashMap<>();
     }
     
     public void register(Class<? extends Record> recordClass) throws InvalidRecordEntityDefinitionException {
@@ -22,6 +24,7 @@ public class RecordEntityRegistryImpl implements RecordEntityRegistry {
             throw new IllegalArgumentException("%s is already registered".formatted(recordClass.getName()));
         }
         this.idFields.put(recordClass, this.findIdField(recordClass));
+        this.recordClasses.put(Records.idFromRecordClass(recordClass), recordClass);
     }
     
     private <T extends Record> String findIdField(Class<T> recordClass) throws InvalidRecordEntityDefinitionException {
@@ -40,6 +43,7 @@ public class RecordEntityRegistryImpl implements RecordEntityRegistry {
         return possibleIdFields.get(0).getName();
     }
     
+    @Override
     public <T extends Record> String getIdField(Class<T> recordClass) {
         var idField = this.idFields.get(recordClass);
         if (idField == null) {
@@ -48,7 +52,13 @@ public class RecordEntityRegistryImpl implements RecordEntityRegistry {
         return idField;
     }
 
+    @Override
     public <T extends Record, K> Function<T, K> getIdValueGetter(Class<T> entityClass) {
         return Records.fieldValueGetter(entityClass, this.getIdField(entityClass));
+    }
+
+    @Override
+    public <T extends Record> Class<T> getRecordType(String typeId) {
+        return (Class<T>) this.recordClasses.get(typeId);
     }
 }

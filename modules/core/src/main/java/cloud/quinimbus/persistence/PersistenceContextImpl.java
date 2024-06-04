@@ -17,6 +17,7 @@ import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import cloud.quinimbus.persistence.entity.reader.RecordEntityReader;
 import cloud.quinimbus.persistence.entity.writer.RecordEntityWriter;
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
+import cloud.quinimbus.persistence.api.lifecycle.LifecycleEvent;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
@@ -27,7 +28,9 @@ import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
+import cloud.quinimbus.persistence.common.storage.PersistenceSchemaStorageDelegate;
 import cloud.quinimbus.persistence.entity.DefaultEmbeddedObject;
+import cloud.quinimbus.persistence.lifecycle.LifecyclePersistenceSchemaStorageDelegate;
 import cloud.quinimbus.persistence.migration.Migrations;
 import cloud.quinimbus.persistence.parsers.BooleanParser;
 import cloud.quinimbus.persistence.parsers.EmbeddedParser;
@@ -37,7 +40,6 @@ import cloud.quinimbus.persistence.parsers.LocalDateParser;
 import cloud.quinimbus.persistence.parsers.StringParser;
 import cloud.quinimbus.persistence.parsers.TimestampParser;
 import cloud.quinimbus.persistence.parsers.ValueParser;
-import cloud.quinimbus.persistence.records.RecordEntityRegistryImpl;
 import cloud.quinimbus.persistence.schema.json.SingleJsonSchemaProvider;
 import cloud.quinimbus.persistence.schema.record.RecordSchemaProvider;
 import cloud.quinimbus.persistence.storage.inmemory.InMemorySchemaStorage;
@@ -51,7 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.extern.java.Log;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
@@ -116,13 +118,19 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
-    public void setSchemaStorage(String id, PersistenceSchemaStorage storage) {
+    public PersistenceSchemaStorage setSchemaStorage(String id, PersistenceSchemaStorage storage) {
+        if (this.getStorageDelegate(storage, LifecyclePersistenceSchemaStorageDelegate.class).isEmpty()) {
+            storage = new LifecyclePersistenceSchemaStorageDelegate(storage);
+        }
         this.schemaStorages.put(id, storage);
+        return storage;
     }
 
     @Override
-    public void setInMemorySchemaStorage(String id) {
-        this.schemaStorages.put(id, new InMemorySchemaStorage(this, this.schemas.get(id)));
+    public PersistenceSchemaStorage setInMemorySchemaStorage(String id) {
+        var storage = new LifecyclePersistenceSchemaStorageDelegate(new InMemorySchemaStorage(this, this.schemas.get(id)));
+        this.schemaStorages.put(id, storage);
+        return storage;
     }
 
     @Override
@@ -281,5 +289,28 @@ public class PersistenceContextImpl implements PersistenceContext {
     @Deprecated
     public RecordEntityRegistry getRecordEntityRegistry() {
         return ((RecordSchemaProvider)this.schemaProviders.get("record")).getRecordEntityRegistry();
+    }
+
+    @Override
+    public <T extends LifecycleEvent> void onLifecycleEvent(String schema, Class<T> eventType, EntityType type, Consumer<T> consumer) {
+        this.onLifecycleEvent(schema, eventType, type.id(), consumer);
+    }
+
+    @Override
+    public <T extends LifecycleEvent> void onLifecycleEvent(String schema, Class<T> eventType, String typeId, Consumer<T> consumer) {
+        var storage = this.getSchemaStorage(schema).orElseThrow(() -> new IllegalArgumentException("Schema storage %s not found".formatted(schema)));
+        var delegate = this.getStorageDelegate(storage, LifecyclePersistenceSchemaStorageDelegate.class)
+                .orElseThrow(() -> new IllegalStateException("LifecyclePersistenceSchemaStorageDelegate is missing for this storage"));
+        delegate.addConsumer(eventType, typeId, consumer);
+    }
+    
+    private <T extends PersistenceSchemaStorageDelegate> Optional<T> getStorageDelegate(PersistenceSchemaStorage storage, Class<T> delegateType) {
+        if (storage instanceof PersistenceSchemaStorageDelegate delegate) {
+            if (delegateType.isInstance(delegate)) {
+                return Optional.of((T) delegate);
+            }
+            return getStorageDelegate(delegate.getDelegate(), delegateType);
+        }
+        return Optional.empty();
     }
 }
