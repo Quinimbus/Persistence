@@ -215,9 +215,9 @@ public abstract class AbstractStorageProviderTest {
         var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
         this.persistenceContext.onLifecycleEvent(schema.id(), EntityPostSaveEvent.class, entryType, e -> {
-            System.out.println("lifecycle! " + e.toString());
             var entity = e.entity();
-            if (entity.getProperty("created") == null) {
+            var justCreatedMutated = e.mutatedProperties().size() == 1 && e.mutatedProperties().get(0).equals("created");
+            if (!justCreatedMutated) {
                 entity.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
                 try {
                     storage.save(entity);
