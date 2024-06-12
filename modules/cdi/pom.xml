@@ -16,12 +16,16 @@
     <dependencies>
         <dependency>
             <groupId>cloud.quinimbus</groupId>
+            <artifactId>persistence-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
             <artifactId>persistence-repositories</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>cloud.quinimbus</groupId>
-            <artifactId>common-annotations</artifactId>
+            <artifactId>config-api</artifactId>
         </dependency>
         <dependency>
             <groupId>cloud.quinimbus</groupId>

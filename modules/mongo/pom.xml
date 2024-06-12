@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>cloud.quinimbus</groupId>
-            <artifactId>persistence-core</artifactId>
+            <artifactId>persistence-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -29,6 +29,10 @@
             <artifactId>mongodb-driver-sync</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>name.falgout.jeffrey</groupId>
+            <artifactId>throwing-streams</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -43,6 +47,12 @@
         <dependency>
             <groupId>cloud.quinimbus</groupId>
             <artifactId>persistence-test-base</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>persistence-core</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

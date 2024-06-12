@@ -9,8 +9,9 @@ module cloud.quinimbus.persistence.storage.mongo {
     
     requires cloud.quinimbus.common.annotations;
     requires cloud.quinimbus.config.api;
-    requires cloud.quinimbus.persistence.core;
     requires cloud.quinimbus.persistence.api;
+    requires throwing.interfaces;
+    requires throwing.streams;
     requires org.mongodb.driver.sync.client;
     requires org.mongodb.bson;
     requires org.mongodb.driver.core;
