@@ -16,6 +16,7 @@ import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorageMigrator;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Projections;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -171,6 +172,20 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
     }
 
     @Override
+    public <K> ThrowingStream<K, PersistenceException> findIDsFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters) {
+        var collection = this.database.getCollection(type.id());
+        var propertyMap = propertyFilters.stream()
+                .collect(
+                        Collectors.toMap(
+                                pf -> pf.property(),
+                                pf -> pf.value()));
+        return ThrowingStream.of(
+                StreamSupport.stream(collection.find(new Document(propertyMap)).projection(Projections.include("_id")).spliterator(), false),
+                PersistenceException.class)
+                .map(doc -> (K)doc.get("_id"));
+    }
+
+    @Override
     public <K> void save(Entity<K> entity) throws PersistenceException {
         var map = new LinkedHashMap<>(entity.asBasicMap(this::convertProperty));
         map.put("_id", entity.getId());
@@ -190,6 +205,15 @@ public class MongoSchemaStorage implements PersistenceSchemaStorage {
                 StreamSupport.stream(collection.find().spliterator(), false),
                 PersistenceException.class)
                 .map(doc -> this.docToEntity(type, (K)doc.get("_id"), doc));
+    }
+
+    @Override
+    public <K> ThrowingStream<K, PersistenceException> findAllIDs(EntityType type) throws PersistenceException {
+        var collection = this.database.getCollection(type.id());
+        return ThrowingStream.of(
+                StreamSupport.stream(collection.find().projection(Projections.include("_id")).spliterator(), false),
+                PersistenceException.class)
+                .map(doc -> (K)doc.get("_id"));
     }
 
     private <K> Entity<K> docToEntity(EntityType type, K id, Document doc) throws UnparseableValueException {

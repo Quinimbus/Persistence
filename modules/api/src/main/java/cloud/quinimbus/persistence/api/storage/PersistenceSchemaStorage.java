@@ -25,8 +25,12 @@ public interface PersistenceSchemaStorage {
     <K> Optional<Entity<K>> find(EntityType type, K id) throws PersistenceException;
     
     <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters);
+    
+    <K> ThrowingStream<K, PersistenceException> findIDsFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters);
 
     <K> void remove(EntityType type, K id) throws PersistenceException;
 
     <K> ThrowingStream<Entity<K>, PersistenceException> findAll(EntityType type) throws PersistenceException;
+
+    <K> ThrowingStream<K, PersistenceException> findAllIDs(EntityType type) throws PersistenceException;
 }

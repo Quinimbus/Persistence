@@ -12,10 +12,14 @@ public class FindMethodInvocationHandler extends RepositoryMethodInvocationHandl
         var name = m.getName();
         if ("findAll".equals(name)) {
             this.delegate = new FindAllMethodInvocationHandler(iface, m, ctx);
+        } else if ("findAllIDs".equals(name)) {
+            this.delegate = new FindAllIDsMethodInvocationHandler(iface, m, ctx);
         } else if ("findOne".equals(name)) {
             this.delegate = new FindOneMethodInvocationHandler(iface, m, ctx);
         } else if ("findFiltered".equals(name)) {
             this.delegate = new FindFilteredMethodInvocationHandler(iface, m, ctx);
+        } else if ("findIDsFiltered".equals(name)) {
+            this.delegate = new FindIDsFilteredMethodInvocationHandler(iface, m, ctx);
         } else if (name.startsWith("findBy") || name.startsWith("findAllBy") || name.startsWith("findOneBy") || name.startsWith("findFilteredBy")) {
             this.delegate = new FindFilteredByMethodNameInvocationHandler(iface, m, ctx);
         } else {

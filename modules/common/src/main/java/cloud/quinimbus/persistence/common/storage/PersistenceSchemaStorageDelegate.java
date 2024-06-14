@@ -58,6 +58,11 @@ public abstract class PersistenceSchemaStorageDelegate implements PersistenceSch
     }
 
     @Override
+    public <K> ThrowingStream<K, PersistenceException> findIDsFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters) {
+        return this.delegate.findIDsFiltered(type, propertyFilters);
+    }
+
+    @Override
     public <K> void remove(EntityType type, K id) throws PersistenceException {
         this.delegate.remove(type, id);
     }
@@ -66,4 +71,11 @@ public abstract class PersistenceSchemaStorageDelegate implements PersistenceSch
     public <K> ThrowingStream<Entity<K>, PersistenceException> findAll(EntityType type) throws PersistenceException {
         return this.delegate.findAll(type);
     }
+
+    @Override
+    public <K> ThrowingStream<K, PersistenceException> findAllIDs(EntityType type) throws PersistenceException {
+        return this.delegate.findAllIDs(type);
+    }
+    
+    
 }

@@ -6,6 +6,7 @@ import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.annotation.EntityTypeClass;
 import cloud.quinimbus.persistence.api.annotation.Schema;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,5 +56,17 @@ public class CRUDRepositoryTest {
         var filtered = this.repository.findFiltered(Map.of("title", "My first entry"));
         assertEquals(1, filtered.size());
         assertEquals("first", filtered.get(0).id());
+    }
+    
+    @Test
+    public void testFindIDs() {
+        this.repository.save(new BlogEntry("first", "My first entry"));
+        this.repository.save(new BlogEntry("second", "My second entry"));
+        var ids = this.repository.findAllIDs();
+        assertEquals(2, ids.size());
+        assertTrue(ids.containsAll(List.of("first", "second")));
+        var filtered = this.repository.findIDsFiltered(Map.of("title", "My first entry"));
+        assertEquals(1, filtered.size());
+        assertEquals("first", filtered.get(0));
     }
 }

@@ -171,8 +171,12 @@ public abstract class AbstractStorageProviderTest {
         //secondEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(secondEntry);
         var resultFromStorage = storage.findAll(entryType).collect(Collectors.toList());
+        var idsFromStorage = storage.findAllIDs(entryType).collect(Collectors.toList());
         Assertions.assertEquals(firstEntry, resultFromStorage.get(0));
         Assertions.assertEquals(secondEntry, resultFromStorage.get(1));
+        Assertions.assertEquals(2, idsFromStorage.size());
+        Assertions.assertTrue(idsFromStorage.contains("first"));
+        Assertions.assertTrue(idsFromStorage.contains("second"));
     }
 
     @Test
@@ -203,8 +207,11 @@ public abstract class AbstractStorageProviderTest {
         //secondEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(secondEntry);
         var sportsEntries = storage.findFiltered(entryType, FilterFactory.fromMap(Map.of("category", "SPORTS"))).collect(Collectors.toList());
+        var sportIdsFromStorage = storage.findIDsFiltered(entryType, FilterFactory.fromMap(Map.of("category", "SPORTS"))).collect(Collectors.toList());
         Assertions.assertEquals(1, sportsEntries.size());
         Assertions.assertEquals(secondEntry, sportsEntries.get(0));
+        Assertions.assertEquals(1, sportIdsFromStorage.size());
+        Assertions.assertTrue(sportIdsFromStorage.contains("second"));
     }
     
     @Test

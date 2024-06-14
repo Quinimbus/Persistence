@@ -7,6 +7,7 @@ import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.annotation.EntityTypeClass;
 import cloud.quinimbus.persistence.api.annotation.Schema;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,5 +85,19 @@ public class WeakCRUDRepositoryTest {
         this.commentRepository.save(new BlogEntryComment("modComment", blogEntry.id(), "Mod", true));
         var filteredComments = this.commentRepository.findFiltered(blogEntry, Map.of("mod", true));
         assertEquals(1, filteredComments.size());
+    }
+    
+    @Test
+    public void testFindIDs() {
+        var blogEntry = new BlogEntry("first", "My first entry");
+        this.entryRepository.save(blogEntry);
+        this.commentRepository.save(new BlogEntryComment("firstComment", blogEntry.id(), "First!", false));
+        this.commentRepository.save(new BlogEntryComment("modComment", blogEntry.id(), "Mod", true));
+        var ids = this.commentRepository.findAllIDs(blogEntry);
+        assertEquals(2, ids.size());
+        assertTrue(ids.containsAll(List.of("firstComment", "modComment")));
+        var filtered = this.commentRepository.findIDsFiltered(blogEntry, Map.of("mod", true));
+        assertEquals(1, filtered.size());
+        assertEquals("modComment", filtered.get(0));
     }
 }
