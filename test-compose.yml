@@ -2,14 +2,14 @@ version: "3.8"
 
 services:
   mongo:
-    image: "mongo:5.0.2"
+    image: "mongo:5.0.27"
     environment:
       MONGO_INITDB_ROOT_USERNAME: mongoroot
       MONGO_INITDB_ROOT_PASSWORD: mongorootpassword
     ports:
       - 27017:27017
     volumes:
-      - "mongodata:/mongo/db"
+      - "mongodata:/data/db"
 
 volumes:
   mongodata:
