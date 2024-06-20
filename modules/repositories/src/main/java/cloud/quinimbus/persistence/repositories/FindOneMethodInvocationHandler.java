@@ -11,7 +11,8 @@ public class FindOneMethodInvocationHandler extends RepositoryMethodInvocationHa
 
     private final EntityWriter entityWriter;
 
-    public FindOneMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
+    public FindOneMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx)
+            throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
         if (getEntityType().owningEntity().isEmpty()) {
             if (m.getParameterCount() != 1) {
@@ -19,7 +20,8 @@ public class FindOneMethodInvocationHandler extends RepositoryMethodInvocationHa
             }
         } else {
             if (m.getParameterCount() != 2) {
-                throw new InvalidRepositoryDefinitionException("The findOne method should have two parameters for weak entities");
+                throw new InvalidRepositoryDefinitionException(
+                        "The findOne method should have two parameters for weak entities");
             }
         }
         var returnType = m.getReturnType();
@@ -27,18 +29,20 @@ public class FindOneMethodInvocationHandler extends RepositoryMethodInvocationHa
             var genericReturnType = this.getEntityClass();
             if (genericReturnType.isRecord()) {
                 try {
-                    this.entityWriter = ctx
-                            .getRecordEntityWriter(this.getEntityType(), (Class<? extends Record>) genericReturnType);
+                    this.entityWriter = ctx.getRecordEntityWriter(
+                            this.getEntityType(), (Class<? extends Record>) genericReturnType);
                 } catch (EntityWriterInitialisationException ex) {
-                    throw new InvalidRepositoryDefinitionException("Exception while creating writer for the repository", ex);
+                    throw new InvalidRepositoryDefinitionException(
+                            "Exception while creating writer for the repository", ex);
                 }
             } else {
-                throw new InvalidRepositoryDefinitionException("Generic return type for a findOne method has to be a record: %s"
-                        .formatted(returnType.getName()));
+                throw new InvalidRepositoryDefinitionException(
+                        "Generic return type for a findOne method has to be a record: %s"
+                                .formatted(returnType.getName()));
             }
         } else {
-            throw new InvalidRepositoryDefinitionException("Unknown return type for a findOne method: %s"
-                    .formatted(returnType.getName()));
+            throw new InvalidRepositoryDefinitionException(
+                    "Unknown return type for a findOne method: %s".formatted(returnType.getName()));
         }
     }
 
@@ -49,8 +53,7 @@ public class FindOneMethodInvocationHandler extends RepositoryMethodInvocationHa
             if (key == null) {
                 throw new PersistenceException("The id may not be null");
             }
-            return this.getSchemaStorage().find(this.getEntityType(), key)
-                    .map(this.entityWriter::write);
+            return this.getSchemaStorage().find(this.getEntityType(), key).map(this.entityWriter::write);
         } else {
             var owner = this.getOwningTypeRecord().cast(args[0]);
             var ownerId = this.getOwningTypeIdGetter().apply(owner);
@@ -58,8 +61,11 @@ public class FindOneMethodInvocationHandler extends RepositoryMethodInvocationHa
             if (key == null) {
                 throw new PersistenceException("The id may not be null");
             }
-            return this.getSchemaStorage().find(this.getEntityType(), key)
-                    .filter(e -> e.getProperty(this.getEntityType().owningEntity().get().field()).equals(ownerId))
+            return this.getSchemaStorage()
+                    .find(this.getEntityType(), key)
+                    .filter(e -> e.getProperty(
+                                    this.getEntityType().owningEntity().get().field())
+                            .equals(ownerId))
                     .map(this.entityWriter::write);
         }
     }

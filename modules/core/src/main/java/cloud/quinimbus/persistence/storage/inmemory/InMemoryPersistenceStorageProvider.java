@@ -1,5 +1,7 @@
 package cloud.quinimbus.persistence.storage.inmemory;
 
+import static java.util.function.Predicate.not;
+
 import cloud.quinimbus.common.annotations.Provider;
 import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.PersistenceContext;
@@ -7,7 +9,6 @@ import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import java.util.Map;
 import java.util.Optional;
-import static java.util.function.Predicate.not;
 
 @Provider(name = "In Memory Dummy persistence storage provider", alias = "memory", priority = 0)
 public class InMemoryPersistenceStorageProvider implements PersistenceStorageProvider<InMemorySchemaStorage> {
@@ -15,11 +16,13 @@ public class InMemoryPersistenceStorageProvider implements PersistenceStoragePro
     public InMemorySchemaStorage createSchema(PersistenceContext context, String schema) throws PersistenceException {
         return new InMemorySchemaStorage(
                 context,
-                context.getSchema(schema).orElseThrow(() -> new PersistenceException("Schema %s not found".formatted(schema))));
+                context.getSchema(schema)
+                        .orElseThrow(() -> new PersistenceException("Schema %s not found".formatted(schema))));
     }
 
     @Override
-    public InMemorySchemaStorage createSchema(PersistenceContext context, Map<String, Object> params) throws PersistenceException {
+    public InMemorySchemaStorage createSchema(PersistenceContext context, Map<String, Object> params)
+            throws PersistenceException {
         var schema = Optional.ofNullable(params.get("schema"))
                 .filter(s -> s instanceof String str && !str.isEmpty())
                 .map(s -> (String) s)
@@ -28,7 +31,8 @@ public class InMemoryPersistenceStorageProvider implements PersistenceStoragePro
     }
 
     @Override
-    public InMemorySchemaStorage createSchema(PersistenceContext context, ConfigNode config) throws PersistenceException {
+    public InMemorySchemaStorage createSchema(PersistenceContext context, ConfigNode config)
+            throws PersistenceException {
         var schema = config.asString("schema")
                 .filter(not(String::isEmpty))
                 .map(s -> (String) s)

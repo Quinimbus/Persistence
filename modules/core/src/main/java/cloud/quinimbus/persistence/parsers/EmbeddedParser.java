@@ -9,16 +9,20 @@ import java.util.List;
 import java.util.Map;
 
 public final class EmbeddedParser implements ValueParser<EmbeddedObject> {
-    
+
     private final List<String> path;
-    
+
     private final EntityType parentType;
-    
+
     private final EmbeddedPropertyType embeddedPropertyType;
-    
+
     private final PersistenceContext persistenceContext;
 
-    public EmbeddedParser(EmbeddedPropertyType embeddedPropertyType, List<String> path, EntityType parentType, PersistenceContext persistenceContext) {
+    public EmbeddedParser(
+            EmbeddedPropertyType embeddedPropertyType,
+            List<String> path,
+            EntityType parentType,
+            PersistenceContext persistenceContext) {
         this.embeddedPropertyType = embeddedPropertyType;
         this.path = path;
         this.parentType = parentType;
@@ -34,6 +38,7 @@ public final class EmbeddedParser implements ValueParser<EmbeddedObject> {
         } else if (o instanceof EmbeddedObject eo) {
             return eo;
         }
-        throw new UnparseableValueException("Cannot read value of type %s as Embedded".formatted(o.getClass().getName()));
+        throw new UnparseableValueException("Cannot read value of type %s as Embedded"
+                .formatted(o.getClass().getName()));
     }
 }

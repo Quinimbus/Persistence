@@ -39,12 +39,14 @@ import java.util.stream.StreamSupport;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaProvider {
-    
-    public static record EntityTypeMixin(@JsonIgnore Set<EntityTypeProperty> properties, @JsonIgnore Set<EntityTypeMigration> migrations) {}
+
+    public static record EntityTypeMixin(
+            @JsonIgnore Set<EntityTypeProperty> properties, @JsonIgnore Set<EntityTypeMigration> migrations) {}
 
     protected Map<String, EntityType> importTypes(ObjectMapper mapper, JsonNode node) throws IOException {
-        return ThrowingStream
-                .of(StreamSupport.stream(Spliterators.spliteratorUnknownSize(node.fields(), 0), false), IOException.class)
+        return ThrowingStream.of(
+                        StreamSupport.stream(Spliterators.spliteratorUnknownSize(node.fields(), 0), false),
+                        IOException.class)
                 .map(e -> this.importType(e.getKey(), mapper, (ObjectNode) e.getValue()))
                 .collect(Collectors.toMap(et -> et.id(), et -> et));
     }
@@ -63,16 +65,20 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
 
     private Set<EntityTypeProperty> importProperties(ObjectCodec codec, ObjectNode node) throws IOException {
         return ThrowingOptional.ofNullable(node.get("properties"), IOException.class)
-                .map(n -> ThrowingStream.of(StreamSupport
-                        .stream(Spliterators.spliteratorUnknownSize(n.fields(), 0), false), IOException.class)
+                .map(n -> ThrowingStream.of(
+                                StreamSupport.stream(Spliterators.spliteratorUnknownSize(n.fields(), 0), false),
+                                IOException.class)
                         .map(e -> readProperty(codec, e))
                         .collect(Collectors.toSet()))
                 .orElse(Set.of());
     }
-    
+
     private EntityTypeProperty readProperty(ObjectCodec codec, Entry<String, JsonNode> entry) throws IOException {
-        var property = entry.getValue().traverse(codec).readValuesAs(EntityTypeProperty.class).next()
-        //var property = mapper.treeToValue(entry.getValue(), EntityTypeProperty.class)
+        var property = entry.getValue()
+                .traverse(codec)
+                .readValuesAs(EntityTypeProperty.class)
+                .next()
+                // var property = mapper.treeToValue(entry.getValue(), EntityTypeProperty.class)
                 .withName(entry.getKey());
         if (property.structure() == null) {
             property = property.withStructure(EntityTypeProperty.Structure.SINGLE);
@@ -82,23 +88,28 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
 
     private Set<EntityTypeMigration> importMigrations(ObjectCodec codec, ObjectNode node) throws IOException {
         return ThrowingOptional.ofNullable(node.get("migrations"), IOException.class)
-                .map(n -> ThrowingStream.of(StreamSupport
-                        .stream(Spliterators.spliteratorUnknownSize(n.fields(), 0), false), IOException.class)
+                .map(n -> ThrowingStream.of(
+                                StreamSupport.stream(Spliterators.spliteratorUnknownSize(n.fields(), 0), false),
+                                IOException.class)
                         .map(e -> readMigration(codec, e))
                         .collect(Collectors.toSet()))
                 .orElse(Set.of());
     }
-    
+
     private EntityTypeMigration readMigration(ObjectCodec codec, Entry<String, JsonNode> entry) throws IOException {
-        var migration = entry.getValue().traverse(codec).readValuesAs(EntityTypeMigration.class).next()
+        var migration = entry.getValue()
+                .traverse(codec)
+                .readValuesAs(EntityTypeMigration.class)
+                .next()
                 .withName(entry.getKey());
         return migration;
     }
-    
+
     private class EntityTypePropertyTypeDeserializer extends JsonDeserializer<EntityTypePropertyType> {
 
         @Override
-        public EntityTypePropertyType deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        public EntityTypePropertyType deserialize(JsonParser p, DeserializationContext ctxt)
+                throws IOException, JsonProcessingException {
             var node = p.getCodec().readTree(p);
             if (node instanceof ValueNode vn) {
                 var type = vn.asText();
@@ -114,7 +125,9 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
                 if (on.has("ENUM")) {
                     var en = on.get("ENUM");
                     if (en instanceof ArrayNode an) {
-                        var allowedValues = StreamSupport.stream(an.spliterator(), false).map(n -> n.asText()).toList();
+                        var allowedValues = StreamSupport.stream(an.spliterator(), false)
+                                .map(n -> n.asText())
+                                .toList();
                         return new EnumPropertyType(allowedValues);
                     } else {
                         throw new IllegalStateException();
@@ -122,8 +135,10 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
                 } else if (on.has("EMBEDDED")) {
                     var en = on.get("EMBEDDED");
                     if (en instanceof ObjectNode eon) {
-                        var properties = AbstractJsonSchemaProvider.this.importProperties(ctxt.getParser().getCodec(), eon);
-                        var migrations = AbstractJsonSchemaProvider.this.importMigrations(ctxt.getParser().getCodec(), eon);
+                        var properties = AbstractJsonSchemaProvider.this.importProperties(
+                                ctxt.getParser().getCodec(), eon);
+                        var migrations = AbstractJsonSchemaProvider.this.importMigrations(
+                                ctxt.getParser().getCodec(), eon);
                         return new EmbeddedPropertyType(properties, migrations);
                     } else {
                         throw new IllegalStateException();
@@ -136,18 +151,19 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
             }
         }
     }
-    
+
     private class EntityTypeMigrationTypeDeserializer extends JsonDeserializer<EntityTypeMigrationType> {
 
         @Override
-        public EntityTypeMigrationType deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+        public EntityTypeMigrationType deserialize(JsonParser p, DeserializationContext ctxt)
+                throws IOException, JacksonException {
             var node = p.getCodec().readTree(p);
             if (node instanceof ObjectNode on) {
                 if (on.has("ADD_PROPERTIES")) {
                     var propertiesNode = on.get("ADD_PROPERTIES");
                     if (propertiesNode instanceof ObjectNode propertiesObjectNode) {
-                        return new PropertyAddMigrationType(new ObjectMapper().convertValue(propertiesObjectNode, new TypeReference<Map<String, Object>>() {
-                        }));
+                        return new PropertyAddMigrationType(new ObjectMapper()
+                                .convertValue(propertiesObjectNode, new TypeReference<Map<String, Object>>() {}));
                     } else {
                         throw new IllegalStateException();
                     }

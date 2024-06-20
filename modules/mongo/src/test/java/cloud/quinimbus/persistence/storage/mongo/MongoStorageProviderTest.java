@@ -22,7 +22,7 @@ public class MongoStorageProviderTest extends AbstractStorageProviderTest {
                 "password", "mongorootpassword",
                 "host", "localhost");
     }
-    
+
     @AfterEach
     public void clearDB() {
         var client = MongoClients.create("mongodb://mongoroot:mongorootpassword@localhost");

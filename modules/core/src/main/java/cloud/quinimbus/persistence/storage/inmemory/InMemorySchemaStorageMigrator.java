@@ -18,7 +18,8 @@ public class InMemorySchemaStorageMigrator implements PersistenceSchemaStorageMi
     }
 
     @Override
-    public void runEntityTypeMigration(EntityType entityType, EntityTypeMigration migration, List<String> path) throws PersistenceException {
+    public void runEntityTypeMigration(EntityType entityType, EntityTypeMigration migration, List<String> path)
+            throws PersistenceException {
         if (migration.type() instanceof PropertyAddMigrationType pamt) {
             for (var m : this.entities.get(entityType.id()).values()) {
                 for (var migrationEntry : pamt.properties().entrySet()) {
@@ -28,7 +29,8 @@ public class InMemorySchemaStorageMigrator implements PersistenceSchemaStorageMi
         }
     }
 
-    private void setProperty(Map<String, Object> entity, String field, List<String> path, Object value) throws PersistenceException {
+    private void setProperty(Map<String, Object> entity, String field, List<String> path, Object value)
+            throws PersistenceException {
         if (path.isEmpty()) {
             entity.put(field, value);
         } else {
@@ -46,7 +48,8 @@ public class InMemorySchemaStorageMigrator implements PersistenceSchemaStorageMi
                         setProperty((Map<String, Object>) map, field, nextPath, value);
                     }
                 } else {
-                    throw new PersistenceException("expected a map but got %s".formatted(embeddedEntity.getClass().getName()));
+                    throw new PersistenceException("expected a map but got %s"
+                            .formatted(embeddedEntity.getClass().getName()));
                 }
             }
         }

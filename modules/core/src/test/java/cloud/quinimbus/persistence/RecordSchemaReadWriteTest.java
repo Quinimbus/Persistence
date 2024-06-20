@@ -5,9 +5,9 @@ import cloud.quinimbus.persistence.api.annotation.EntityField;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationException;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
+import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.entity.reader.RecordEntityReader;
 import cloud.quinimbus.persistence.entity.writer.RecordEntityWriter;
-import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.schema.record.RecordSchemaProvider;
 import java.time.Instant;
 import java.util.Map;
@@ -18,20 +18,15 @@ import org.junit.jupiter.api.Test;
 public class RecordSchemaReadWriteTest {
 
     public static enum Category {
-        POLITICS, SPORTS
+        POLITICS,
+        SPORTS
     }
-    
-    @Embeddable
-    public static record Author(
-            String name,
-            String subtext) {
 
-    }
-    
     @Embeddable
-    public static record Ad(String company) {
-        
-    }
+    public static record Author(String name, String subtext) {}
+
+    @Embeddable
+    public static record Ad(String company) {}
 
     public static record BlogEntry(
             @EntityIdField String id,
@@ -43,12 +38,11 @@ public class RecordSchemaReadWriteTest {
             @EntityField(type = String.class) Set<String> tags,
             Author author,
             @EntityField(type = Ad.class) Set<Ad> ads,
-            @EntityField(type = Integer.class) Map<String, Integer> ratings) {
-
-    }
+            @EntityField(type = Integer.class) Map<String, Integer> ratings) {}
 
     @Test
-    public void testReaderAndWriter() throws InvalidSchemaException, EntityReaderInitialisationException, EntityWriterInitialisationException {
+    public void testReaderAndWriter()
+            throws InvalidSchemaException, EntityReaderInitialisationException, EntityWriterInitialisationException {
         var schemaProvider = new RecordSchemaProvider();
         var schema = schemaProvider.importSchema("blog", 1L, BlogEntry.class);
         var blogEntryType = schema.entityTypes().get("blogEntry");
@@ -68,14 +62,16 @@ public class RecordSchemaReadWriteTest {
         var entity = blogEntryReader.read(entry);
         var map = entity.asBasicMap();
         Assertions.assertTrue(map.get("author") instanceof Map);
-        Assertions.assertTrue(map.get("ads") instanceof Set s && s.stream().findFirst().get() instanceof Map);
+        Assertions.assertTrue(
+                map.get("ads") instanceof Set s && s.stream().findFirst().get() instanceof Map);
         Assertions.assertEquals("POLITICS", map.get("category"));
         var loaded = blogEntryWriter.write(entity);
         Assertions.assertEquals(entry, loaded);
     }
-    
+
     @Test
-    public void testNullValues() throws InvalidSchemaException, EntityReaderInitialisationException, EntityWriterInitialisationException {
+    public void testNullValues()
+            throws InvalidSchemaException, EntityReaderInitialisationException, EntityWriterInitialisationException {
         var schemaProvider = new RecordSchemaProvider();
         var schema = schemaProvider.importSchema("blog", 1L, BlogEntry.class);
         var blogEntryType = schema.entityTypes().get("blogEntry");

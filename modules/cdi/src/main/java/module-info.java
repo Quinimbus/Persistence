@@ -1,7 +1,6 @@
 module cloud.quinimbus.persistence.cdi {
-    
     exports cloud.quinimbus.persistence.cdi;
-    
+
     requires cloud.quinimbus.config.api;
     requires cloud.quinimbus.config.cdi;
     requires cloud.quinimbus.persistence.api;

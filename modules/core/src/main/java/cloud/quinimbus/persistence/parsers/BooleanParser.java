@@ -13,8 +13,8 @@ public final class BooleanParser implements ValueParser<Boolean> {
         } else if (o instanceof String s) {
             return Boolean.valueOf(s);
         } else {
-            throw new UnparseableValueException(
-                    "Cannot read value of type %s as Boolean".formatted(o.getClass().getName()));
+            throw new UnparseableValueException("Cannot read value of type %s as Boolean"
+                    .formatted(o.getClass().getName()));
         }
     }
 }

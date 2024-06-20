@@ -36,24 +36,27 @@ public class SingleJsonSchemaProvider extends AbstractJsonSchemaProvider {
             if (params.containsKey("file")) {
                 var file = params.get("file");
                 if (file instanceof Path p) {
-                    try ( var reader = Files.newBufferedReader(p, Charset.forName("UTF-8"))) {
+                    try (var reader = Files.newBufferedReader(p, Charset.forName("UTF-8"))) {
                         return this.importSchema(reader);
                     }
                 } else if (file instanceof String s) {
-                    try ( var reader = Files.newBufferedReader(Path.of(s), Charset.forName("UTF-8"))) {
+                    try (var reader = Files.newBufferedReader(Path.of(s), Charset.forName("UTF-8"))) {
                         return this.importSchema(reader);
                     }
                 } else {
-                    throw new InvalidSchemaException("Unknown type %s in configuration for file".formatted(file.getClass().getName()));
+                    throw new InvalidSchemaException("Unknown type %s in configuration for file"
+                            .formatted(file.getClass().getName()));
                 }
             } else if (params.containsKey("resource")) {
                 var resource = params.get("resource");
                 if (resource instanceof String s) {
-                    try ( var reader = new InputStreamReader(this.getClass().getResourceAsStream(s), Charset.forName("UTF-8"))) {
+                    try (var reader =
+                            new InputStreamReader(this.getClass().getResourceAsStream(s), Charset.forName("UTF-8"))) {
                         return this.importSchema(reader);
                     }
                 } else {
-                    throw new InvalidSchemaException("Unknown type %s in configuration for resource".formatted(resource.getClass().getName()));
+                    throw new InvalidSchemaException("Unknown type %s in configuration for resource"
+                            .formatted(resource.getClass().getName()));
                 }
             } else {
                 throw new InvalidSchemaException("Cannot find either file nor resource keys in the configuration");
@@ -66,13 +69,14 @@ public class SingleJsonSchemaProvider extends AbstractJsonSchemaProvider {
     @Override
     public Schema loadSchema(ConfigNode node) throws InvalidSchemaException {
         try {
-            try ( var reader = ThrowingOptional.ofOptional(node.asString("file"), IOException.class)
+            try (var reader = ThrowingOptional.ofOptional(node.asString("file"), IOException.class)
                     .map(Path::of)
                     .map(f -> (Reader) Files.newBufferedReader(f, Charset.forName("UTF-8")))
                     .or(() -> ThrowingOptional.ofOptional(node.asString("resource"), IOException.class)
                             .map(r -> new InputStreamReader(
                                     this.getClass().getResourceAsStream(r), Charset.forName("UTF-8"))))
-                    .orElseThrow(() -> new InvalidSchemaException("Cannot find either file nor resource keys in the configuration"))) {
+                    .orElseThrow(() -> new InvalidSchemaException(
+                            "Cannot find either file nor resource keys in the configuration"))) {
                 return this.importSchema(reader);
             }
         } catch (IOException ex) {

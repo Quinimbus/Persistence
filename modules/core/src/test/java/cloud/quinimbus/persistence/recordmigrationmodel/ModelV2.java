@@ -9,22 +9,18 @@ import cloud.quinimbus.persistence.api.annotation.Schema;
 public class ModelV2 {
 
     public static enum Category {
-        UNSORTED, POLITICS, SPORTS
+        UNSORTED,
+        POLITICS,
+        SPORTS
     }
-    
-    @Embeddable
-    public static record Author(
-            String name,
-            @FieldAddMigration(version = 2, value = "unknown") String subtext) {
 
-    }
+    @Embeddable
+    public static record Author(String name, @FieldAddMigration(version = 2, value = "unknown") String subtext) {}
 
     @Entity(schema = @Schema(id = "blog", version = 2))
     public static record BlogEntry(
             @EntityIdField String id,
             String title,
             Author author,
-            @FieldAddMigration(version = 2, value = "UNSORTED") Category category) {
-
-    }
+            @FieldAddMigration(version = 2, value = "UNSORTED") Category category) {}
 }

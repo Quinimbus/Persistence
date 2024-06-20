@@ -1,5 +1,7 @@
 package cloud.quinimbus.persistence.repositories;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.annotation.Entity;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
@@ -11,22 +13,17 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class CRUDRepositoryTest {
 
     @Entity(schema = @Schema(id = "crudblog", version = 1L))
-    public static record BlogEntry(@EntityIdField String id, String title) {
-
-    }
+    public static record BlogEntry(@EntityIdField String id, String title) {}
 
     @EntityTypeClass(BlogEntry.class)
-    public static interface BlogEntryRepository extends CRUDRepository<BlogEntry, String> {
+    public static interface BlogEntryRepository extends CRUDRepository<BlogEntry, String> {}
 
-    }
-    
     private BlogEntryRepository repository;
-    
+
     @BeforeEach
     public void init() throws InvalidSchemaException, InvalidRepositoryDefinitionException {
         var ctx = ServiceLoader.load(PersistenceContext.class).findFirst().get();
@@ -48,7 +45,7 @@ public class CRUDRepositoryTest {
         this.repository.remove("first");
         assertFalse(this.repository.findOne("first").isPresent());
     }
-    
+
     @Test
     public void testFiltering() {
         this.repository.save(new BlogEntry("first", "My first entry"));
@@ -57,7 +54,7 @@ public class CRUDRepositoryTest {
         assertEquals(1, filtered.size());
         assertEquals("first", filtered.get(0).id());
     }
-    
+
     @Test
     public void testFindIDs() {
         this.repository.save(new BlogEntry("first", "My first entry"));

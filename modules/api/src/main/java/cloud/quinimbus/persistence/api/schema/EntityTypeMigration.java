@@ -5,6 +5,4 @@ import lombok.With;
 
 @Builder
 @With
-public record EntityTypeMigration<T extends EntityTypeMigrationType>(String name, Long schemaVersion, T type) {
-    
-}
+public record EntityTypeMigration<T extends EntityTypeMigrationType>(String name, Long schemaVersion, T type) {}

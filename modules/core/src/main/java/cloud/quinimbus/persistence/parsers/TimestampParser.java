@@ -17,8 +17,8 @@ public final class TimestampParser implements ValueParser<Instant> {
         } else if (o instanceof Date d) {
             return d.toInstant();
         } else {
-            throw new UnparseableValueException(
-                    "Cannot read value of type %s as Timestamp".formatted(o.getClass().getName()));
+            throw new UnparseableValueException("Cannot read value of type %s as Timestamp"
+                    .formatted(o.getClass().getName()));
         }
     }
 }

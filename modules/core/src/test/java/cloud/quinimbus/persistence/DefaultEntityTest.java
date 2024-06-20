@@ -1,5 +1,7 @@
 package cloud.quinimbus.persistence;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.StructuredObjectEntry;
@@ -15,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 public class DefaultEntityTest {
@@ -25,10 +26,14 @@ public class DefaultEntityTest {
         var entity = this.createTestEntity();
         assertEquals(
                 Map.of(
-                        "string", "Hello World",
-                        "stringlist", List.of("a", "b"),
-                        "number", 13,
-                        "embedded", Map.of("string", "embedded")),
+                        "string",
+                        "Hello World",
+                        "stringlist",
+                        List.of("a", "b"),
+                        "number",
+                        13,
+                        "embedded",
+                        Map.of("string", "embedded")),
                 entity.asBasicMap());
     }
 
@@ -37,31 +42,42 @@ public class DefaultEntityTest {
         var entity = this.createTestEntity();
         assertEquals(
                 Map.of(
-                        "string", "Hello World",
-                        "stringlist", List.of("a", "b"),
-                        "number", "13",
-                        "embedded", Map.of("string", "embedded")),
+                        "string",
+                        "Hello World",
+                        "stringlist",
+                        List.of("a", "b"),
+                        "number",
+                        "13",
+                        "embedded",
+                        Map.of("string", "embedded")),
                 entity.asBasicMap(this::convertToString));
     }
 
     private Entity<String> createTestEntity() {
-        var embeddedType = new EmbeddedPropertyType(Set.of(
-                new EntityTypeProperty("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE)),
+        var embeddedType = new EmbeddedPropertyType(
+                Set.of(new EntityTypeProperty("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE)),
                 Set.of());
-        var type = new EntityType("testEntity", Optional.empty(), Set.of(
-                new EntityTypeProperty<>("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE),
-                new EntityTypeProperty<>("stringlist", new StringPropertyType(), EntityTypeProperty.Structure.LIST),
-                new EntityTypeProperty<>("number", new IntegerPropertyType(), EntityTypeProperty.Structure.SINGLE),
-                new EntityTypeProperty<>("embedded", embeddedType, EntityTypeProperty.Structure.SINGLE)), Set.of());
+        var type = new EntityType(
+                "testEntity",
+                Optional.empty(),
+                Set.of(
+                        new EntityTypeProperty<>(
+                                "string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE),
+                        new EntityTypeProperty<>(
+                                "stringlist", new StringPropertyType(), EntityTypeProperty.Structure.LIST),
+                        new EntityTypeProperty<>(
+                                "number", new IntegerPropertyType(), EntityTypeProperty.Structure.SINGLE),
+                        new EntityTypeProperty<>("embedded", embeddedType, EntityTypeProperty.Structure.SINGLE)),
+                Set.of());
         var properties = Map.<String, Object>of(
-                "string", "Hello World",
-                "stringlist", List.of("a", "b"),
-                "number", 13,
-                "embedded", new DefaultEmbeddedObject(
-                        new String[]{"embedded"},
-                        type,
-                        Map.of("string", "embedded"),
-                        embeddedType));
+                "string",
+                "Hello World",
+                "stringlist",
+                List.of("a", "b"),
+                "number",
+                13,
+                "embedded",
+                new DefaultEmbeddedObject(new String[] {"embedded"}, type, Map.of("string", "embedded"), embeddedType));
         return new DefaultEntity<>("first", type, properties);
     }
 

@@ -33,18 +33,24 @@ public abstract class AbstractStorageProviderTest {
 
     @BeforeEach
     public void init() throws IOException {
-        LogManager.getLogManager().readConfiguration(AbstractStorageProviderTest.class.getResourceAsStream("logging.properties"));
-        this.persistenceContext = ServiceLoader.load(PersistenceContext.class).findFirst().get();
+        LogManager.getLogManager()
+                .readConfiguration(AbstractStorageProviderTest.class.getResourceAsStream("logging.properties"));
+        this.persistenceContext =
+                ServiceLoader.load(PersistenceContext.class).findFirst().get();
     }
 
     @Test
     public void testInitSchema() throws IOException, InvalidSchemaException {
-        this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"),
+                Charset.forName("UTF-8")));
     }
-    
+
     @Test
     public void testMetadata() throws IOException, PersistenceException, InvalidSchemaException {
-        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"),
+                Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
         var storage = this.getStorageProvider().createSchema(this.persistenceContext, params);
@@ -52,14 +58,17 @@ public abstract class AbstractStorageProviderTest {
         Assertions.assertEquals("blog", metadata.id());
         Assertions.assertEquals(1, metadata.version());
     }
-    
+
     @Test
     public void testMigration() throws IOException, PersistenceException, InvalidSchemaException {
-        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"),
+                Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
-        
+        var storage = this.persistenceContext.setSchemaStorage(
+                schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
+
         var entryType = schema.entityTypes().get("entry");
         var authorType = entryType.embeddedPropertyType("author").orElseThrow();
         var commentType = entryType.embeddedPropertyType("comments").orElseThrow();
@@ -71,38 +80,43 @@ public abstract class AbstractStorageProviderTest {
                 List.of("author"),
                 Map.of("name", "John Doe", "subtext", "The most average guy"));
         entry.setProperty("author", author);
-        entry.setProperty("comments", List.of(
-                this.persistenceContext.newEmbedded(
-                        commentType,
-                        entryType,
-                        List.of("comments"),
-                        Map.of("text", "comment 1")),
-                this.persistenceContext.newEmbedded(
-                        commentType,
-                        entryType,
-                        List.of("comments"),
-                        Map.of("text", "comment 1"))));
+        entry.setProperty(
+                "comments",
+                List.of(
+                        this.persistenceContext.newEmbedded(
+                                commentType, entryType, List.of("comments"), Map.of("text", "comment 1")),
+                        this.persistenceContext.newEmbedded(
+                                commentType, entryType, List.of("comments"), Map.of("text", "comment 1"))));
         storage.save(entry);
-        
-        schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema_migration.json"), Charset.forName("UTF-8")));
+
+        schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream(
+                        "AbstractStorageProviderTest_schema_migration.json"),
+                Charset.forName("UTF-8")));
         this.persistenceContext.upgradeSchema(storage);
         var metadata = storage.getSchemaMetadata();
         Assertions.assertEquals(2, metadata.version());
         Assertions.assertEquals(3, metadata.entityTypeMigrationRuns().size());
-        
+
         entryType = schema.entityTypes().get("entry");
         entry = storage.find(entryType, "first").orElseThrow();
         Assertions.assertEquals("no sponsor", entry.getProperty("sponsor"));
-        Assertions.assertEquals("STAFF", entry.<EmbeddedObject>getProperty("author").getProperty("role"));
-        Assertions.assertEquals(Instant.parse("2023-02-16T00:00:00Z"), entry.<List<EmbeddedObject>>getProperty("comments").get(0).getProperty("posted"));
+        Assertions.assertEquals(
+                "STAFF", entry.<EmbeddedObject>getProperty("author").getProperty("role"));
+        Assertions.assertEquals(
+                Instant.parse("2023-02-16T00:00:00Z"),
+                entry.<List<EmbeddedObject>>getProperty("comments").get(0).getProperty("posted"));
     }
 
     @Test
     public void testSaveAndLoad() throws IOException, PersistenceException, InvalidSchemaException {
-        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"),
+                Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
+        var storage = this.persistenceContext.setSchemaStorage(
+                schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
         var authorType = entryType.embeddedPropertyType("author").orElseThrow();
         var commentType = entryType.embeddedPropertyType("comments").orElseThrow();
@@ -114,26 +128,23 @@ public abstract class AbstractStorageProviderTest {
         firstEntry.setProperty("category", "POLITICS");
         firstEntry.setProperty("readcount", 15);
         firstEntry.setProperty("tags", List.of("election", "politics"));
-        firstEntry.setProperty("author", this.persistenceContext.newEmbedded(
-                authorType,
-                entryType,
-                List.of("author"),
-                Map.of(
-                        "name", "Max Mustermann",
-                        "subtext", "The first of all authors.")));
-        firstEntry.setProperty("ratings", Map.of(
-                "userA", 1, "userB", 2));
-        firstEntry.setProperty("comments", List.of(
+        firstEntry.setProperty(
+                "author",
                 this.persistenceContext.newEmbedded(
-                        commentType,
+                        authorType,
                         entryType,
-                        List.of("comments"),
-                        Map.of("text", "comment 1")),
-                this.persistenceContext.newEmbedded(
-                        commentType,
-                        entryType,
-                        List.of("comments"),
-                        Map.of("text", "comment 1"))));
+                        List.of("author"),
+                        Map.of(
+                                "name", "Max Mustermann",
+                                "subtext", "The first of all authors.")));
+        firstEntry.setProperty("ratings", Map.of("userA", 1, "userB", 2));
+        firstEntry.setProperty(
+                "comments",
+                List.of(
+                        this.persistenceContext.newEmbedded(
+                                commentType, entryType, List.of("comments"), Map.of("text", "comment 1")),
+                        this.persistenceContext.newEmbedded(
+                                commentType, entryType, List.of("comments"), Map.of("text", "comment 1"))));
         storage.save(firstEntry);
         var resultFromStorage = storage.find(entryType, "first").get();
         Assertions.assertEquals(firstEntry, resultFromStorage);
@@ -141,10 +152,13 @@ public abstract class AbstractStorageProviderTest {
 
     @Test
     public void testSaveAndLoadList() throws IOException, PersistenceException, InvalidSchemaException {
-        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"),
+                Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
+        var storage = this.persistenceContext.setSchemaStorage(
+                schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
@@ -154,9 +168,8 @@ public abstract class AbstractStorageProviderTest {
         firstEntry.setProperty("category", "POLITICS");
         firstEntry.setProperty("readcount", 15);
         firstEntry.setProperty("tags", List.of("election", "politics"));
-        firstEntry.setProperty("ratings", Map.of(
-                "userA", 1, "userB", 2));
-        //firstEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
+        firstEntry.setProperty("ratings", Map.of("userA", 1, "userB", 2));
+        // firstEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(firstEntry);
         var secondEntry = this.persistenceContext.newEntity("second", entryType);
         secondEntry.setProperty("title", "My second entry");
@@ -166,9 +179,8 @@ public abstract class AbstractStorageProviderTest {
         secondEntry.setProperty("category", "POLITICS");
         secondEntry.setProperty("readcount", 12);
         secondEntry.setProperty("tags", List.of("election", "politics"));
-        secondEntry.setProperty("ratings", Map.of(
-                "userA", 5, "userB", 1));
-        //secondEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
+        secondEntry.setProperty("ratings", Map.of("userA", 5, "userB", 1));
+        // secondEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(secondEntry);
         var resultFromStorage = storage.findAll(entryType).collect(Collectors.toList());
         var idsFromStorage = storage.findAllIDs(entryType).collect(Collectors.toList());
@@ -181,10 +193,13 @@ public abstract class AbstractStorageProviderTest {
 
     @Test
     public void testSaveAndLoadFiltered() throws IOException, PersistenceException, InvalidSchemaException {
-        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"),
+                Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
+        var storage = this.persistenceContext.setSchemaStorage(
+                schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
         firstEntry.setProperty("title", "My first entry");
@@ -194,7 +209,7 @@ public abstract class AbstractStorageProviderTest {
         firstEntry.setProperty("category", "POLITICS");
         firstEntry.setProperty("readcount", 15);
         firstEntry.setProperty("tags", List.of("election", "politics"));
-        //firstEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
+        // firstEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(firstEntry);
         var secondEntry = this.persistenceContext.newEntity("second", entryType);
         secondEntry.setProperty("title", "My second entry");
@@ -204,26 +219,33 @@ public abstract class AbstractStorageProviderTest {
         secondEntry.setProperty("category", "SPORTS");
         secondEntry.setProperty("readcount", 12);
         secondEntry.setProperty("tags", List.of("soccer", "championship"));
-        //secondEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
+        // secondEntry.setProperty("author", Map.of("name", "Max Mustermann", "subtext", "The first of all authors."));
         storage.save(secondEntry);
-        var sportsEntries = storage.findFiltered(entryType, FilterFactory.fromMap(Map.of("category", "SPORTS"))).collect(Collectors.toList());
-        var sportIdsFromStorage = storage.findIDsFiltered(entryType, FilterFactory.fromMap(Map.of("category", "SPORTS"))).collect(Collectors.toList());
+        var sportsEntries = storage.findFiltered(entryType, FilterFactory.fromMap(Map.of("category", "SPORTS")))
+                .collect(Collectors.toList());
+        var sportIdsFromStorage = storage.findIDsFiltered(
+                        entryType, FilterFactory.fromMap(Map.of("category", "SPORTS")))
+                .collect(Collectors.toList());
         Assertions.assertEquals(1, sportsEntries.size());
         Assertions.assertEquals(secondEntry, sportsEntries.get(0));
         Assertions.assertEquals(1, sportIdsFromStorage.size());
         Assertions.assertTrue(sportIdsFromStorage.contains("second"));
     }
-    
+
     @Test
     public void testLifecycleEvents() throws IOException, PersistenceException, InvalidSchemaException {
-        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"), Charset.forName("UTF-8")));
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"),
+                Charset.forName("UTF-8")));
         var params = new LinkedHashMap<>(this.getParams());
         params.put("schema", schema.id());
-        var storage = this.persistenceContext.setSchemaStorage(schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
+        var storage = this.persistenceContext.setSchemaStorage(
+                schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
         this.persistenceContext.onLifecycleEvent(schema.id(), EntityPostSaveEvent.class, entryType, e -> {
             var entity = e.entity();
-            var justCreatedMutated = e.mutatedProperties().size() == 1 && e.mutatedProperties().get(0).equals("created");
+            var justCreatedMutated = e.mutatedProperties().size() == 1
+                    && e.mutatedProperties().get(0).equals("created");
             if (!justCreatedMutated) {
                 entity.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
                 try {

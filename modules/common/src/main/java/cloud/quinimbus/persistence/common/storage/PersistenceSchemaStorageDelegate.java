@@ -14,7 +14,7 @@ import lombok.Getter;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 public abstract class PersistenceSchemaStorageDelegate implements PersistenceSchemaStorage {
-    
+
     @Getter
     private final PersistenceSchemaStorage delegate;
 
@@ -53,12 +53,14 @@ public abstract class PersistenceSchemaStorageDelegate implements PersistenceSch
     }
 
     @Override
-    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters) {
+    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(
+            EntityType type, Set<? extends PropertyFilter> propertyFilters) {
         return this.delegate.findFiltered(type, propertyFilters);
     }
 
     @Override
-    public <K> ThrowingStream<K, PersistenceException> findIDsFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters) {
+    public <K> ThrowingStream<K, PersistenceException> findIDsFiltered(
+            EntityType type, Set<? extends PropertyFilter> propertyFilters) {
         return this.delegate.findIDsFiltered(type, propertyFilters);
     }
 
@@ -76,6 +78,4 @@ public abstract class PersistenceSchemaStorageDelegate implements PersistenceSch
     public <K> ThrowingStream<K, PersistenceException> findAllIDs(EntityType type) throws PersistenceException {
         return this.delegate.findAllIDs(type);
     }
-    
-    
 }

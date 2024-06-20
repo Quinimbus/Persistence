@@ -21,26 +21,20 @@ public class GenericMethod {
         var generic = this.method.getGenericReturnType();
         if (generic instanceof TypeVariable tv) {
             return this.resolveTypeVar(tv)
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Cannot resolve the type variable %s for method %s of type %s"
-                                    .formatted(
-                                            tv.toString(),
-                                            this.method.toString(),
-                                            this.implementation.toString())));
+                    .orElseThrow(() ->
+                            new IllegalStateException("Cannot resolve the type variable %s for method %s of type %s"
+                                    .formatted(tv.toString(), this.method.toString(), this.implementation.toString())));
         }
         return this.method.getReturnType();
     }
-    
+
     public Class<?> getActualParameterType(int i) {
         var generic = this.method.getGenericParameterTypes()[i];
         if (generic instanceof TypeVariable tv) {
             return this.resolveTypeVar(tv)
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Cannot resolve the type variable %s for method %s of type %s"
-                                    .formatted(
-                                            tv.toString(),
-                                            this.method.toString(),
-                                            this.implementation.toString())));
+                    .orElseThrow(() ->
+                            new IllegalStateException("Cannot resolve the type variable %s for method %s of type %s"
+                                    .formatted(tv.toString(), this.method.toString(), this.implementation.toString())));
         }
         return this.method.getParameterTypes()[i];
     }

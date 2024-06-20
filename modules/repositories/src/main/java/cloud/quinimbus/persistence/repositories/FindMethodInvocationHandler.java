@@ -4,10 +4,11 @@ import cloud.quinimbus.persistence.api.PersistenceContext;
 import java.lang.reflect.Method;
 
 public class FindMethodInvocationHandler extends RepositoryMethodInvocationHandler {
-    
+
     private final RepositoryMethodInvocationHandler delegate;
 
-    public FindMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
+    public FindMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx)
+            throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
         var name = m.getName();
         if ("findAll".equals(name)) {
@@ -20,7 +21,10 @@ public class FindMethodInvocationHandler extends RepositoryMethodInvocationHandl
             this.delegate = new FindFilteredMethodInvocationHandler(iface, m, ctx);
         } else if ("findIDsFiltered".equals(name)) {
             this.delegate = new FindIDsFilteredMethodInvocationHandler(iface, m, ctx);
-        } else if (name.startsWith("findBy") || name.startsWith("findAllBy") || name.startsWith("findOneBy") || name.startsWith("findFilteredBy")) {
+        } else if (name.startsWith("findBy")
+                || name.startsWith("findAllBy")
+                || name.startsWith("findOneBy")
+                || name.startsWith("findFilteredBy")) {
             this.delegate = new FindFilteredByMethodNameInvocationHandler(iface, m, ctx);
         } else {
             throw new InvalidRepositoryDefinitionException("Cannot understand find method name %s".formatted(name));

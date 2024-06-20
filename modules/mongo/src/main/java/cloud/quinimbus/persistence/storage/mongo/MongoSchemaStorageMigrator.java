@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.bson.Document;
 
 public class MongoSchemaStorageMigrator implements PersistenceSchemaStorageMigrator {
-    
+
     private final MongoSchemaStorage storage;
 
     public MongoSchemaStorageMigrator(MongoSchemaStorage storage) {
@@ -21,29 +21,32 @@ public class MongoSchemaStorageMigrator implements PersistenceSchemaStorageMigra
     }
 
     @Override
-    public void runEntityTypeMigration(EntityType entityType, EntityTypeMigration migration, List<String> path) throws PersistenceException {
+    public void runEntityTypeMigration(EntityType entityType, EntityTypeMigration migration, List<String> path)
+            throws PersistenceException {
         if (migration.type() instanceof PropertyAddMigrationType pamt) {
             if (path.isEmpty()) {
-                this.storage.getDatabase().getCollection(entityType.id()).updateMany(new Document(), new Document(Map.of("$set", pamt.properties())));
+                this.storage
+                        .getDatabase()
+                        .getCollection(entityType.id())
+                        .updateMany(new Document(), new Document(Map.of("$set", pamt.properties())));
             } else {
                 var prefix = pathToPrefix(entityType, path);
                 var properties = pamt.properties().entrySet().stream()
-                        .collect(
-                                Collectors.toMap(
-                                        e -> "%s.%s".formatted(prefix ,e.getKey()),
-                                        Map.Entry::getValue));
-                this.storage.getDatabase().getCollection(entityType.id()).updateMany(new Document(), new Document(Map.of("$set", properties)));
+                        .collect(Collectors.toMap(e -> "%s.%s".formatted(prefix, e.getKey()), Map.Entry::getValue));
+                this.storage
+                        .getDatabase()
+                        .getCollection(entityType.id())
+                        .updateMany(new Document(), new Document(Map.of("$set", properties)));
             }
         }
     }
-    
+
     private String pathToPrefix(StructuredObjectType entityType, List<String> path) throws PersistenceException {
         var currentPath = path.get(0);
         var currentProperty = entityType.property(currentPath).orElseThrow();
         if (currentProperty.type() instanceof EmbeddedPropertyType) {
             switch (currentProperty.structure()) {
-                case LIST, SET ->
-                    currentPath = currentPath.concat(".$[]");
+                case LIST, SET -> currentPath = currentPath.concat(".$[]");
             }
         }
         if (path.size() == 1) {
@@ -52,7 +55,8 @@ public class MongoSchemaStorageMigrator implements PersistenceSchemaStorageMigra
             if (currentProperty.type() instanceof EmbeddedPropertyType ept) {
                 return "%s.%s".formatted(currentPath, pathToPrefix(ept, path.subList(1, path.size())));
             } else {
-                throw new PersistenceException("An property path with more than 1 element is only allowed in embedded scenarios");
+                throw new PersistenceException(
+                        "An property path with more than 1 element is only allowed in embedded scenarios");
             }
         }
     }

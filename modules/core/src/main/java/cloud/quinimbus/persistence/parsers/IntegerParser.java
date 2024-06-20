@@ -19,10 +19,8 @@ public final class IntegerParser implements ValueParser<Number> {
         } else if (o instanceof Long l) {
             return l;
         } else {
-            throw new UnparseableValueException(
-                    "Cannot read value %s of type %s as Integer".formatted(
-                            o.toString(),
-                            o.getClass().getName()));
+            throw new UnparseableValueException("Cannot read value %s of type %s as Integer"
+                    .formatted(o.toString(), o.getClass().getName()));
         }
     }
 }

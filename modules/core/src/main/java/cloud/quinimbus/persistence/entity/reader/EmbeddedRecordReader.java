@@ -16,20 +16,18 @@ public class EmbeddedRecordReader<T extends Record> extends AbstractRecordReader
 
     private final EntityType parentType;
 
-    public EmbeddedRecordReader(EmbeddedPropertyType type, Class<T> recordClass, List<String> path, EntityType parentType) throws EntityReaderInitialisationException {
+    public EmbeddedRecordReader(
+            EmbeddedPropertyType type, Class<T> recordClass, List<String> path, EntityType parentType)
+            throws EntityReaderInitialisationException {
         super(parentType, type.properties(), recordClass);
-        this.path = path.toArray(new String[]{});
+        this.path = path.toArray(new String[] {});
         this.parentType = parentType;
         this.type = type;
     }
 
     public EmbeddedObject readRecord(T source) {
         try {
-            return new DefaultEmbeddedObject(
-                    this.path,
-                    this.parentType,
-                    this.getProperties(source),
-                    this.type);
+            return new DefaultEmbeddedObject(this.path, this.parentType, this.getProperties(source), this.type);
         } catch (ReflectiveOperationException ex) {
             throw new EntityReaderReadException("Error reading the source object %s".formatted(source.toString()), ex);
         }

@@ -6,7 +6,8 @@ import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 
 public class EmbeddedRecordWriter<T extends Record> extends AbstractRecordWriter<T> {
 
-    public EmbeddedRecordWriter(Class<T> recordClass, EmbeddedPropertyType type) throws EntityWriterInitialisationException {
+    public EmbeddedRecordWriter(Class<T> recordClass, EmbeddedPropertyType type)
+            throws EntityWriterInitialisationException {
         super(recordClass, type.properties(), null);
     }
 
@@ -21,6 +22,7 @@ public class EmbeddedRecordWriter<T extends Record> extends AbstractRecordWriter
         if (o instanceof EmbeddedObject eo) {
             return this.write(eo);
         }
-        throw new IllegalArgumentException("Cannot write %s of type %s as embedded record".formatted(o.toString(), o.getClass().getName()));
+        throw new IllegalArgumentException("Cannot write %s of type %s as embedded record"
+                .formatted(o.toString(), o.getClass().getName()));
     }
 }

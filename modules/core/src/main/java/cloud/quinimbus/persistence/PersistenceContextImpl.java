@@ -8,18 +8,14 @@ import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationException;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
-import cloud.quinimbus.persistence.api.schema.EntityType;
-import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
-import cloud.quinimbus.persistence.entity.DefaultEntity;
-import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
-import cloud.quinimbus.persistence.api.schema.Schema;
-import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
-import cloud.quinimbus.persistence.entity.reader.RecordEntityReader;
-import cloud.quinimbus.persistence.entity.writer.RecordEntityWriter;
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
 import cloud.quinimbus.persistence.api.lifecycle.LifecycleEvent;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
+import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
+import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
+import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
+import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
@@ -27,9 +23,13 @@ import cloud.quinimbus.persistence.api.schema.properties.IntegerPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
+import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import cloud.quinimbus.persistence.common.storage.PersistenceSchemaStorageDelegate;
 import cloud.quinimbus.persistence.entity.DefaultEmbeddedObject;
+import cloud.quinimbus.persistence.entity.DefaultEntity;
+import cloud.quinimbus.persistence.entity.reader.RecordEntityReader;
+import cloud.quinimbus.persistence.entity.writer.RecordEntityWriter;
 import cloud.quinimbus.persistence.lifecycle.LifecyclePersistenceSchemaStorageDelegate;
 import cloud.quinimbus.persistence.migration.Migrations;
 import cloud.quinimbus.persistence.parsers.BooleanParser;
@@ -64,7 +64,7 @@ public class PersistenceContextImpl implements PersistenceContext {
     private final Map<String, Schema> schemas;
 
     private final Map<String, PersistenceSchemaStorage> schemaStorages;
-    
+
     private final Map<String, PersistenceSchemaProvider> schemaProviders;
 
     private final Map<String, PersistenceStorageProvider<? extends PersistenceSchemaStorage>> schemaStorageProviders;
@@ -77,9 +77,8 @@ public class PersistenceContextImpl implements PersistenceContext {
         ServiceLoader.load(PersistenceSchemaProvider.class).forEach(sp -> {
             var providerAnno = sp.getClass().getAnnotation(Provider.class);
             if (providerAnno == null) {
-                throw new IllegalStateException(
-                        "Schema provider %s is missing the @Provider annotation"
-                                .formatted(sp.getClass().getName()));
+                throw new IllegalStateException("Schema provider %s is missing the @Provider annotation"
+                        .formatted(sp.getClass().getName()));
             }
             for (String a : providerAnno.alias()) {
                 this.schemaProviders.put(a, sp);
@@ -88,17 +87,17 @@ public class PersistenceContextImpl implements PersistenceContext {
         ServiceLoader.load(PersistenceStorageProvider.class).forEach(ssp -> {
             var providerAnno = ssp.getClass().getAnnotation(Provider.class);
             if (providerAnno == null) {
-                throw new IllegalStateException(
-                        "Schema storage provider %s is missing the @Provider annotation"
-                                .formatted(ssp.getClass().getName()));
+                throw new IllegalStateException("Schema storage provider %s is missing the @Provider annotation"
+                        .formatted(ssp.getClass().getName()));
             }
             for (String a : providerAnno.alias()) {
                 this.schemaStorageProviders.put(a, ssp);
             }
         });
     }
-    
-    public <T extends PersistenceSchemaStorage> Optional<? extends PersistenceStorageProvider<T>> getStorageProvider(String alias) {
+
+    public <T extends PersistenceSchemaStorage> Optional<? extends PersistenceStorageProvider<T>> getStorageProvider(
+            String alias) {
         return Optional.ofNullable((PersistenceStorageProvider<T>) this.schemaStorageProviders.get(alias));
     }
 
@@ -119,7 +118,8 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     @Override
     public PersistenceSchemaStorage setSchemaStorage(String id, PersistenceSchemaStorage storage) {
-        if (this.getStorageDelegate(storage, LifecyclePersistenceSchemaStorageDelegate.class).isEmpty()) {
+        if (this.getStorageDelegate(storage, LifecyclePersistenceSchemaStorageDelegate.class)
+                .isEmpty()) {
             storage = new LifecyclePersistenceSchemaStorageDelegate(storage);
         }
         this.schemaStorages.put(id, storage);
@@ -128,7 +128,8 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     @Override
     public PersistenceSchemaStorage setInMemorySchemaStorage(String id) {
-        var storage = new LifecyclePersistenceSchemaStorageDelegate(new InMemorySchemaStorage(this, this.schemas.get(id)));
+        var storage =
+                new LifecyclePersistenceSchemaStorageDelegate(new InMemorySchemaStorage(this, this.schemas.get(id)));
         this.schemaStorages.put(id, storage);
         return storage;
     }
@@ -139,29 +140,28 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
-    public <K> Entity<K> newEntity(K id, EntityType type, Map<String, Object> properties) throws UnparseableValueException {
+    public <K> Entity<K> newEntity(K id, EntityType type, Map<String, Object> properties)
+            throws UnparseableValueException {
         var typeProperties = type.properties().stream().collect(Collectors.toMap(pt -> pt.name(), pt -> pt));
-        Map<String, Object> parsedProperties = ThrowingStream
-                .of(properties.entrySet().stream(), UnparseableValueException.class)
+        Map<String, Object> parsedProperties = ThrowingStream.of(
+                        properties.entrySet().stream(), UnparseableValueException.class)
                 .filter(e -> typeProperties.containsKey(e.getKey()))
-                .map(e -> Map.entry(
-                        e.getKey(),
-                        this.parse(type, List.of(), typeProperties.get(e.getKey()), e)))
+                .map(e -> Map.entry(e.getKey(), this.parse(type, List.of(), typeProperties.get(e.getKey()), e)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return new DefaultEntity<>(id, type, parsedProperties);
     }
 
     @Override
-    public EmbeddedObject newEmbedded(EmbeddedPropertyType type, EntityType parentType, List<String> path, Map<String, Object> properties) throws UnparseableValueException {
+    public EmbeddedObject newEmbedded(
+            EmbeddedPropertyType type, EntityType parentType, List<String> path, Map<String, Object> properties)
+            throws UnparseableValueException {
         var typeProperties = type.properties().stream().collect(Collectors.toMap(pt -> pt.name(), pt -> pt));
-        Map<String, Object> parsedProperties = ThrowingStream
-                .of(properties.entrySet().stream(), UnparseableValueException.class)
+        Map<String, Object> parsedProperties = ThrowingStream.of(
+                        properties.entrySet().stream(), UnparseableValueException.class)
                 .filter(e -> typeProperties.containsKey(e.getKey()))
-                .map(e -> Map.entry(
-                        e.getKey(),
-                        this.parse(parentType, path, typeProperties.get(e.getKey()), e)))
+                .map(e -> Map.entry(e.getKey(), this.parse(parentType, path, typeProperties.get(e.getKey()), e)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new DefaultEmbeddedObject(path.toArray(new String[]{}), parentType, parsedProperties, type);
+        return new DefaultEmbeddedObject(path.toArray(new String[] {}), parentType, parsedProperties, type);
     }
 
     @Override
@@ -172,7 +172,8 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
-    public Schema importSchema(PersistenceSchemaProvider provider, ConfigNode configNode) throws InvalidSchemaException {
+    public Schema importSchema(PersistenceSchemaProvider provider, ConfigNode configNode)
+            throws InvalidSchemaException {
         var schema = provider.loadSchema(configNode);
         schemas.put(schema.id(), schema);
         return schema;
@@ -191,7 +192,7 @@ public class PersistenceContextImpl implements PersistenceContext {
     @Override
     public Schema importRecordSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException {
         var schema = ThrowingOptional.ofOptional(this.getSchemaProvider("record"), InvalidSchemaException.class)
-                .map(p -> (RecordSchemaProvider)p)
+                .map(p -> (RecordSchemaProvider) p)
                 .map(p -> p.importSchema(recordClasses))
                 .orElseThrow(() -> new InvalidSchemaException("Cannot find the record schema provider"));
         schemas.put(schema.id(), schema);
@@ -199,7 +200,8 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
-    public <T extends Record> RecordEntityReader<T> getRecordEntityReader(EntityType type, Class<T> recordClass) throws EntityReaderInitialisationException {
+    public <T extends Record> RecordEntityReader<T> getRecordEntityReader(EntityType type, Class<T> recordClass)
+            throws EntityReaderInitialisationException {
         if (!recordClass.isRecord()) {
             throw new IllegalArgumentException("Type %s is no record".formatted(recordClass.getName()));
         }
@@ -207,48 +209,51 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
-    public <T extends Record> RecordEntityWriter<T> getRecordEntityWriter(EntityType type, Class<T> recordClass) throws EntityWriterInitialisationException {
+    public <T extends Record> RecordEntityWriter<T> getRecordEntityWriter(EntityType type, Class<T> recordClass)
+            throws EntityWriterInitialisationException {
         if (!recordClass.isRecord()) {
             throw new IllegalArgumentException("Type %s is no record".formatted(recordClass.getName()));
         }
-        return new RecordEntityWriter(type, recordClass, this.getRecordEntityRegistry().getIdField(recordClass));
+        return new RecordEntityWriter(
+                type, recordClass, this.getRecordEntityRegistry().getIdField(recordClass));
     }
 
-    private Object parse(EntityType parentType, List<String> parentPath, EntityTypeProperty property, Map.Entry<String, Object> e) throws UnparseableValueException {
+    private Object parse(
+            EntityType parentType, List<String> parentPath, EntityTypeProperty property, Map.Entry<String, Object> e)
+            throws UnparseableValueException {
         var type = property.type();
         if (type == null) {
             throw new IllegalStateException("type not found");
         }
         var parser = this.getParser(parentType, parentPath, property);
         return switch (property.structure()) {
-            case SINGLE ->
-                parser.parse(e.getValue());
+            case SINGLE -> parser.parse(e.getValue());
             case LIST -> {
                 if (e.getValue() instanceof Collection<?> col) {
                     yield ThrowingStream.of(col.stream(), UnparseableValueException.class)
-                    .map(parser::parse)
-                    .collect(Collectors.toList());
+                            .map(parser::parse)
+                            .collect(Collectors.toList());
                 }
-                throw new UnparseableValueException(
-                        "Cannot read a value of type %s as list structure".formatted(e.getValue().getClass()));
+                throw new UnparseableValueException("Cannot read a value of type %s as list structure"
+                        .formatted(e.getValue().getClass()));
             }
             case MAP -> {
                 if (e.getValue() instanceof Map<?, ?> map) {
                     yield ThrowingStream.of(map.entrySet().stream(), UnparseableValueException.class)
-                        .map(e2 -> Map.entry(e2.getKey(), parser.parse(e2.getValue())))
-                        .collect(Collectors.toMap(e2 -> e2.getKey(), e2 -> e2.getValue()));
+                            .map(e2 -> Map.entry(e2.getKey(), parser.parse(e2.getValue())))
+                            .collect(Collectors.toMap(e2 -> e2.getKey(), e2 -> e2.getValue()));
                 }
-                throw new UnparseableValueException(
-                        "Cannot read a value of type %s as map structure".formatted(e.getValue().getClass()));
+                throw new UnparseableValueException("Cannot read a value of type %s as map structure"
+                        .formatted(e.getValue().getClass()));
             }
             case SET -> {
                 if (e.getValue() instanceof Collection<?> col) {
                     yield ThrowingStream.of(col.stream(), UnparseableValueException.class)
-                    .map(parser::parse)
-                    .collect(Collectors.toSet());
+                            .map(parser::parse)
+                            .collect(Collectors.toSet());
                 }
-                throw new UnparseableValueException(
-                        "Cannot read a value of type %s as set structure".formatted(e.getValue().getClass()));
+                throw new UnparseableValueException("Cannot read a value of type %s as set structure"
+                        .formatted(e.getValue().getClass()));
             }
         };
     }
@@ -270,11 +275,7 @@ public class PersistenceContextImpl implements PersistenceContext {
         } else if (type instanceof EmbeddedPropertyType ept) {
             var newParentPath = new ArrayList<>(parentPath);
             newParentPath.add(property.name());
-            return new EmbeddedParser(
-                    ept,
-                    newParentPath,
-                    parentType,
-                    this);
+            return new EmbeddedParser(ept, newParentPath, parentType, this);
         } else {
             throw new IllegalStateException(); // Cannot happen
         }
@@ -288,23 +289,28 @@ public class PersistenceContextImpl implements PersistenceContext {
     @Override
     @Deprecated
     public RecordEntityRegistry getRecordEntityRegistry() {
-        return ((RecordSchemaProvider)this.schemaProviders.get("record")).getRecordEntityRegistry();
+        return ((RecordSchemaProvider) this.schemaProviders.get("record")).getRecordEntityRegistry();
     }
 
     @Override
-    public <T extends LifecycleEvent> void onLifecycleEvent(String schema, Class<T> eventType, EntityType type, Consumer<T> consumer) {
+    public <T extends LifecycleEvent> void onLifecycleEvent(
+            String schema, Class<T> eventType, EntityType type, Consumer<T> consumer) {
         this.onLifecycleEvent(schema, eventType, type.id(), consumer);
     }
 
     @Override
-    public <T extends LifecycleEvent> void onLifecycleEvent(String schema, Class<T> eventType, String typeId, Consumer<T> consumer) {
-        var storage = this.getSchemaStorage(schema).orElseThrow(() -> new IllegalArgumentException("Schema storage %s not found".formatted(schema)));
+    public <T extends LifecycleEvent> void onLifecycleEvent(
+            String schema, Class<T> eventType, String typeId, Consumer<T> consumer) {
+        var storage = this.getSchemaStorage(schema)
+                .orElseThrow(() -> new IllegalArgumentException("Schema storage %s not found".formatted(schema)));
         var delegate = this.getStorageDelegate(storage, LifecyclePersistenceSchemaStorageDelegate.class)
-                .orElseThrow(() -> new IllegalStateException("LifecyclePersistenceSchemaStorageDelegate is missing for this storage"));
+                .orElseThrow(() -> new IllegalStateException(
+                        "LifecyclePersistenceSchemaStorageDelegate is missing for this storage"));
         delegate.addConsumer(eventType, typeId, consumer);
     }
-    
-    private <T extends PersistenceSchemaStorageDelegate> Optional<T> getStorageDelegate(PersistenceSchemaStorage storage, Class<T> delegateType) {
+
+    private <T extends PersistenceSchemaStorageDelegate> Optional<T> getStorageDelegate(
+            PersistenceSchemaStorage storage, Class<T> delegateType) {
         if (storage instanceof PersistenceSchemaStorageDelegate delegate) {
             if (delegateType.isInstance(delegate)) {
                 return Optional.of((T) delegate);

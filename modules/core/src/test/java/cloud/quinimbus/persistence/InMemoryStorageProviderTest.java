@@ -6,7 +6,7 @@ import java.util.Map;
 import lombok.Getter;
 
 public class InMemoryStorageProviderTest extends AbstractStorageProviderTest {
-    
+
     @Getter
     private final InMemoryPersistenceStorageProvider storageProvider;
 

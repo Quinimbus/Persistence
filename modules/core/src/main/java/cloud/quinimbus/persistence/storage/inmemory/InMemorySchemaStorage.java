@@ -26,13 +26,13 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
     private final PersistenceContext context;
 
     private final Map<String, Map<Object, Map<String, Object>>> entities;
-    
+
     private final String schemaId;
-    
+
     private Long schemaVersion;
-    
+
     private final Instant creationTime;
-    
+
     private final Set<MigrationRun> migrationRuns;
 
     public InMemorySchemaStorage(PersistenceContext context, Schema schema) {
@@ -52,10 +52,11 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
 
     @Override
     public void increaseSchemaVersion(Long version) throws PersistenceException {
-       if (this.schemaVersion > version) {
-           throw new PersistenceException("You cannot downgrade the schema version from %d to %d".formatted(this.schemaVersion, version));
-       }
-       this.schemaVersion = version;
+        if (this.schemaVersion > version) {
+            throw new PersistenceException(
+                    "You cannot downgrade the schema version from %d to %d".formatted(this.schemaVersion, version));
+        }
+        this.schemaVersion = version;
     }
 
     @Override
@@ -65,9 +66,10 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
 
     @Override
     public void logMigrationRun(String identifier, String entityType, Long schemaVersion, Instant runAt) {
-        this.migrationRuns.add(new cloud.quinimbus.persistence.api.schema.Metadata.MigrationRun(identifier, entityType, schemaVersion, runAt));
+        this.migrationRuns.add(new cloud.quinimbus.persistence.api.schema.Metadata.MigrationRun(
+                identifier, entityType, schemaVersion, runAt));
     }
-    
+
     @Override
     public <K> void save(Entity<K> entity) {
         this.entities.get(entity.getType().id()).put(entity.getId(), entity.asBasicMap());
@@ -79,23 +81,25 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
                 .map(m -> this.context.newEntity(id, type, m))
                 .toOptional();
     }
-    
+
     @Override
-    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters) {
+    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(
+            EntityType type, Set<? extends PropertyFilter> propertyFilters) {
         return ThrowingStream.of(this.entities.get(type.id()).entrySet().stream(), PersistenceException.class)
-                .filter(e -> propertyFilters.stream().allMatch(pf -> switch(pf.operator()) {
+                .filter(e -> propertyFilters.stream().allMatch(pf -> switch (pf.operator()) {
                     case EQUALS -> Objects.equals(e.getValue().get(pf.property()), pf.value());
                 }))
                 .map(e -> this.context.newEntity((K) e.getKey(), type, e.getValue()));
     }
 
     @Override
-    public <K> ThrowingStream<K, PersistenceException> findIDsFiltered(EntityType type, Set<? extends PropertyFilter> propertyFilters) {
+    public <K> ThrowingStream<K, PersistenceException> findIDsFiltered(
+            EntityType type, Set<? extends PropertyFilter> propertyFilters) {
         return ThrowingStream.of(this.entities.get(type.id()).entrySet().stream(), PersistenceException.class)
-                .filter(e -> propertyFilters.stream().allMatch(pf -> switch(pf.operator()) {
+                .filter(e -> propertyFilters.stream().allMatch(pf -> switch (pf.operator()) {
                     case EQUALS -> Objects.equals(e.getValue().get(pf.property()), pf.value());
                 }))
-                .map(e -> (K)e.getKey());
+                .map(e -> (K) e.getKey());
     }
 
     @Override
@@ -107,7 +111,7 @@ public class InMemorySchemaStorage implements PersistenceSchemaStorage {
     @Override
     public <K> ThrowingStream<K, PersistenceException> findAllIDs(EntityType type) {
         return ThrowingStream.of(this.entities.get(type.id()).keySet().stream(), PersistenceException.class)
-                .map(k -> (K)k);
+                .map(k -> (K) k);
     }
 
     @Override

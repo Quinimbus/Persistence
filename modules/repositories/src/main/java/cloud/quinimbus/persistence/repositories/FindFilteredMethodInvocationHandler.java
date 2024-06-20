@@ -15,41 +15,48 @@ import java.util.stream.Collectors;
 public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocationHandler {
 
     private final EntityWriter entityWriter;
-    
+
     private final Class parameterType;
 
-    public FindFilteredMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
+    public FindFilteredMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx)
+            throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
         if (this.getEntityType().owningEntity().isEmpty()) {
             if (m.getParameterCount() != 1) {
-                throw new InvalidRepositoryDefinitionException("The findFiltered method should have exactly one parameter");
+                throw new InvalidRepositoryDefinitionException(
+                        "The findFiltered method should have exactly one parameter");
             }
             this.parameterType = m.getParameterTypes()[0];
         } else {
             if (m.getParameterCount() != 2) {
-                throw new InvalidRepositoryDefinitionException("The findFiltered method should have exactly two parameters for weak entities");
+                throw new InvalidRepositoryDefinitionException(
+                        "The findFiltered method should have exactly two parameters for weak entities");
             }
             this.parameterType = m.getParameterTypes()[1];
         }
         if (!Map.class.isAssignableFrom(this.parameterType) && !this.parameterType.isRecord()) {
-            throw new InvalidRepositoryDefinitionException("The last parameter of the findFiltered method should be of type Map or be a record type");
+            throw new InvalidRepositoryDefinitionException(
+                    "The last parameter of the findFiltered method should be of type Map or be a record type");
         }
         var returnType = m.getReturnType();
         if (List.class.equals(returnType)) {
             var genericReturnType = this.getEntityClass();
             if (genericReturnType.isRecord()) {
                 try {
-                    this.entityWriter = ctx.getRecordEntityWriter(this.getEntityType(), (Class<? extends Record>) genericReturnType);
+                    this.entityWriter = ctx.getRecordEntityWriter(
+                            this.getEntityType(), (Class<? extends Record>) genericReturnType);
                 } catch (EntityWriterInitialisationException ex) {
-                    throw new InvalidRepositoryDefinitionException("Exception while creating writer for the repository", ex);
+                    throw new InvalidRepositoryDefinitionException(
+                            "Exception while creating writer for the repository", ex);
                 }
             } else {
-                throw new InvalidRepositoryDefinitionException("Generic return type for a findFiltered method has to be a record: %s"
-                        .formatted(returnType.getName()));
+                throw new InvalidRepositoryDefinitionException(
+                        "Generic return type for a findFiltered method has to be a record: %s"
+                                .formatted(returnType.getName()));
             }
         } else {
-            throw new InvalidRepositoryDefinitionException("Unknown return type for a findFiltered method: %s"
-                    .formatted(returnType.getName()));
+            throw new InvalidRepositoryDefinitionException(
+                    "Unknown return type for a findFiltered method: %s".formatted(returnType.getName()));
         }
     }
 
@@ -65,7 +72,8 @@ public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocat
             throw new IllegalArgumentException("unknown parameter type: " + this.parameterType.getName());
         }
         if (getEntityType().owningEntity().isEmpty()) {
-            return this.getSchemaStorage().findFiltered(this.getEntityType(), filters)
+            return this.getSchemaStorage()
+                    .findFiltered(this.getEntityType(), filters)
                     .map(this.entityWriter::write)
                     .collect(Collectors.toList());
         } else {
@@ -73,9 +81,9 @@ public class FindFilteredMethodInvocationHandler extends RepositoryMethodInvocat
             var ownerId = this.getOwningTypeIdGetter().apply(owner);
             var extendedFilters = new HashSet<PropertyFilter>(filters);
             extendedFilters.add(FilterFactory.filterEquals(
-                            this.getEntityType().owningEntity().orElseThrow().field(),
-                            ownerId));
-            return this.getSchemaStorage().findFiltered(this.getEntityType(), extendedFilters)
+                    this.getEntityType().owningEntity().orElseThrow().field(), ownerId));
+            return this.getSchemaStorage()
+                    .findFiltered(this.getEntityType(), extendedFilters)
                     .map(this.entityWriter::write)
                     .collect(Collectors.toList());
         }

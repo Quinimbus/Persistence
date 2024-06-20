@@ -6,7 +6,6 @@ import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
-import cloud.quinimbus.tools.stream.QCollectors;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
@@ -23,35 +22,45 @@ public class AbstractRecordReader<T extends Record> {
 
     private final Map<String, Function<Object, Object>> propertyFieldValueReaders;
 
-    public AbstractRecordReader(EntityType type, Set<EntityTypeProperty> properties, Class<T> recordClass) throws EntityReaderInitialisationException {
+    public AbstractRecordReader(EntityType type, Set<EntityTypeProperty> properties, Class<T> recordClass)
+            throws EntityReaderInitialisationException {
         try {
             this.propertyFieldGetters = createPropertyFieldGetters(properties, recordClass);
             this.propertyFieldValueReaders = createPropertyFieldValueReaders(properties, type, recordClass);
         } catch (NoSuchMethodException | SecurityException ex) {
-            throw new EntityReaderInitialisationException("Cannot initialize the reader for the record class %s"
-                .formatted(recordClass.getName()), ex);
+            throw new EntityReaderInitialisationException(
+                    "Cannot initialize the reader for the record class %s".formatted(recordClass.getName()), ex);
         }
     }
 
-    private static <T extends Record> Map<String, Method> createPropertyFieldGetters(Set<EntityTypeProperty> properties, Class<T> recordClass) throws NoSuchMethodException {
+    private static <T extends Record> Map<String, Method> createPropertyFieldGetters(
+            Set<EntityTypeProperty> properties, Class<T> recordClass) throws NoSuchMethodException {
         return ThrowingStream.of(properties.stream(), NoSuchMethodException.class)
                 .map(p -> Map.entry(p.name(), recordClass.getMethod(p.name())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private static <T extends Record> Map<String, Function<Object, Object>> createPropertyFieldValueReaders(Set<EntityTypeProperty> properties, EntityType type, Class<T> recordClass) throws EntityReaderInitialisationException {
+    private static <T extends Record> Map<String, Function<Object, Object>> createPropertyFieldValueReaders(
+            Set<EntityTypeProperty> properties, EntityType type, Class<T> recordClass)
+            throws EntityReaderInitialisationException {
         return ThrowingStream.of(properties.stream(), EntityReaderInitialisationException.class)
-                    .map(p -> Map.entry(p.name(), createPropertyFieldValueReader(type, p, recordClass)))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .map(p -> Map.entry(p.name(), createPropertyFieldValueReader(type, p, recordClass)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
-    
-    private static <T extends Record> Function<Object, Object> createPropertyFieldValueReader(EntityType type, EntityTypeProperty t, Class<T> recordClass) throws EntityReaderInitialisationException {
+
+    private static <T extends Record> Function<Object, Object> createPropertyFieldValueReader(
+            EntityType type, EntityTypeProperty t, Class<T> recordClass) throws EntityReaderInitialisationException {
         if (t.type() instanceof EmbeddedPropertyType ept) {
             try {
-                var targetClass = switch (t.structure()) {
-                    case SINGLE -> (Class<Record>) recordClass.getMethod(t.name()).getReturnType();
-                    case LIST, SET, MAP -> (Class<Record>) recordClass.getDeclaredField(t.name()).getAnnotation(EntityField.class).type();
-                };
+                var targetClass =
+                        switch (t.structure()) {
+                            case SINGLE -> (Class<Record>)
+                                    recordClass.getMethod(t.name()).getReturnType();
+                            case LIST, SET, MAP -> (Class<Record>) recordClass
+                                    .getDeclaredField(t.name())
+                                    .getAnnotation(EntityField.class)
+                                    .type();
+                        };
                 var reader = new EmbeddedRecordReader(ept, targetClass, List.of(t.name()), type);
                 return switch (t.structure()) {
                     case SINGLE -> reader::tryRead;
@@ -60,7 +69,8 @@ public class AbstractRecordReader<T extends Record> {
                     case SET -> setReader(reader::tryRead);
                 };
             } catch (ReflectiveOperationException | SecurityException ex) {
-                throw new EntityReaderInitialisationException("Unable to find the getter method for %s".formatted(t.name()), ex);
+                throw new EntityReaderInitialisationException(
+                        "Unable to find the getter method for %s".formatted(t.name()), ex);
             }
         } else if (t.type() instanceof EnumPropertyType) {
             Function<Object, Object> reader = v -> {
@@ -79,7 +89,7 @@ public class AbstractRecordReader<T extends Record> {
             return Function.identity();
         }
     }
-    
+
     private static Function<Object, Object> listReader(Function<Object, Object> singleReader) {
         return vl -> {
             if (vl instanceof Collection c) {
@@ -89,7 +99,7 @@ public class AbstractRecordReader<T extends Record> {
             }
         };
     }
-    
+
     private static Function<Object, Object> setReader(Function<Object, Object> singleReader) {
         return vl -> {
             if (vl instanceof Collection c) {
@@ -99,15 +109,12 @@ public class AbstractRecordReader<T extends Record> {
             }
         };
     }
-    
+
     private static Function<Object, Object> mapReader(Function<Object, Object> singleReader) {
         return vl -> {
             if (vl instanceof Map<?, ?> m) {
                 return m.entrySet().stream()
-                        .collect(
-                                Collectors.toMap(
-                                        e -> e.getKey(),
-                                        e -> singleReader.apply(e.getValue())));
+                        .collect(Collectors.toMap(e -> e.getKey(), e -> singleReader.apply(e.getValue())));
             } else {
                 throw new IllegalStateException();
             }
@@ -118,7 +125,11 @@ public class AbstractRecordReader<T extends Record> {
         return ThrowingStream.of(this.propertyFieldGetters.entrySet().stream(), ReflectiveOperationException.class)
                 .map(e -> Map.entry(e.getKey(), Optional.ofNullable(e.getValue().invoke(source))))
                 .filter(e -> e.getValue().isPresent())
-                .map(e -> Map.entry(e.getKey(), this.propertyFieldValueReaders.get(e.getKey()).apply(e.getValue().get())))
+                .map(e -> Map.entry(
+                        e.getKey(),
+                        this.propertyFieldValueReaders
+                                .get(e.getKey())
+                                .apply(e.getValue().get())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

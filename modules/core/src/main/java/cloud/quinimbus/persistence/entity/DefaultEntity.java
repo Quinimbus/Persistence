@@ -41,20 +41,14 @@ public class DefaultEntity<K> extends AbstractDefaultStructuredObject<EntityType
 
     @Override
     public Optional<StructuredObjectEntry<EntityTypePropertyType>> getPropertyEntry(String id) {
-        return this.type.property(id)
-                .map(etp -> new DefaultEntityPropertyEntry(
-                        id,
-                        this.getProperty(id),
-                        etp.type(),
-                        false));
+        return this.type
+                .property(id)
+                .map(etp -> new DefaultEntityPropertyEntry(id, this.getProperty(id), etp.type(), false));
     }
 
     @Override
     public Optional<StructuredObjectEntry<EntityTypePropertyType>> getPropertyEntry(String id, Object partialValue) {
         var value = this.getProperty(id);
-        return this.type.property(id)
-                .map(etp -> this.mapToPartialEntry(etp, value, partialValue));
+        return this.type.property(id).map(etp -> this.mapToPartialEntry(etp, value, partialValue));
     }
-
-
 }

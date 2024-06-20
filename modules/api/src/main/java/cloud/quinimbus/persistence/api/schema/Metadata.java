@@ -9,6 +9,5 @@ import lombok.With;
 @With
 public record Metadata(String id, Long version, Instant creationTime, Set<MigrationRun> entityTypeMigrationRuns) {
 
-    public static record MigrationRun(String identifier, String entityType, Long schemaVersion, Instant runAt) {
-    }
+    public static record MigrationRun(String identifier, String entityType, Long schemaVersion, Instant runAt) {}
 }

@@ -6,7 +6,8 @@ import java.lang.reflect.Method;
 
 public class RemoveMethodInvocationHandler extends RepositoryMethodInvocationHandler {
 
-    public RemoveMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx) throws InvalidRepositoryDefinitionException {
+    public RemoveMethodInvocationHandler(Class<?> iface, Method m, PersistenceContext ctx)
+            throws InvalidRepositoryDefinitionException {
         super(iface, m, ctx);
         if (getEntityType().owningEntity().isEmpty()) {
             if (m.getParameterCount() != 1) {
@@ -14,7 +15,8 @@ public class RemoveMethodInvocationHandler extends RepositoryMethodInvocationHan
             }
         } else {
             if (m.getParameterCount() != 2) {
-                throw new InvalidRepositoryDefinitionException("The remove method should have two parameters for weak entity types");
+                throw new InvalidRepositoryDefinitionException(
+                        "The remove method should have two parameters for weak entity types");
             }
         }
         if (!void.class.equals(m.getReturnType())) {

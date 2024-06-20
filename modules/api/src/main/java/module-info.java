@@ -1,5 +1,4 @@
 open module cloud.quinimbus.persistence.api {
-    
     exports cloud.quinimbus.persistence.api;
     exports cloud.quinimbus.persistence.api.annotation;
     exports cloud.quinimbus.persistence.api.entity;
@@ -10,7 +9,7 @@ open module cloud.quinimbus.persistence.api {
     exports cloud.quinimbus.persistence.api.schema.migrations;
     exports cloud.quinimbus.persistence.api.schema.properties;
     exports cloud.quinimbus.persistence.api.storage;
-    
+
     requires cloud.quinimbus.config.api;
     requires static lombok;
     requires throwing.streams;

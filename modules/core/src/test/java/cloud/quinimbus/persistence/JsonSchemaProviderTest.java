@@ -63,7 +63,8 @@ public class JsonSchemaProviderTest {
                                 .build()))
                 .build();
         var provider = new SingleJsonSchemaProvider();
-        var importedSchema = provider.importSchema(new InputStreamReader(this.getClass().getResourceAsStream("JsonSchemaProviderTest_schema.json")));
+        var importedSchema = provider.importSchema(
+                new InputStreamReader(this.getClass().getResourceAsStream("JsonSchemaProviderTest_schema.json")));
         System.out.println(importedSchema);
         Assertions.assertEquals(schema, importedSchema);
     }

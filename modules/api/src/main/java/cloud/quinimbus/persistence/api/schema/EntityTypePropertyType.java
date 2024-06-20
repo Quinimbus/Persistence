@@ -9,13 +9,11 @@ import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 
-public sealed interface EntityTypePropertyType extends StructuredObjectEntryType permits
-        BooleanPropertyType,
-        EmbeddedPropertyType,
-        EnumPropertyType,
-        IntegerPropertyType,
-        LocalDatePropertyType,
-        StringPropertyType,
-        TimestampPropertyType {
-
-}
+public sealed interface EntityTypePropertyType extends StructuredObjectEntryType
+        permits BooleanPropertyType,
+                EmbeddedPropertyType,
+                EnumPropertyType,
+                IntegerPropertyType,
+                LocalDatePropertyType,
+                StringPropertyType,
+                TimestampPropertyType {}

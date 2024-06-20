@@ -1,7 +1,7 @@
 package cloud.quinimbus.persistence.schema.record;
 
-import cloud.quinimbus.common.annotations.modelling.Owner;
 import cloud.quinimbus.common.annotations.Provider;
+import cloud.quinimbus.common.annotations.modelling.Owner;
 import cloud.quinimbus.common.tools.Records;
 import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.annotation.Embeddable;
@@ -10,11 +10,11 @@ import cloud.quinimbus.persistence.api.annotation.EntityField;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.annotation.FieldAddMigration;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
-import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.EntityTypePropertyType;
+import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.schema.migrations.PropertyAddMigrationType;
@@ -41,7 +41,7 @@ import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 @Provider(name = "Record classes schema provider", alias = "record", priority = 0)
 public class RecordSchemaProvider implements PersistenceSchemaProvider {
-    
+
     private final RecordEntityRegistryImpl recordEntityRegistry;
 
     public RecordSchemaProvider() {
@@ -60,35 +60,41 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         return this.importSchema(ThrowingStream.of(recordClasses, InvalidSchemaException.class));
     }
 
-    public Schema importSchema(ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses) throws InvalidSchemaException {
+    public Schema importSchema(ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses)
+            throws InvalidSchemaException {
         var list = recordClasses.collect(Collectors.toList());
         if (list.isEmpty()) {
             throw new InvalidSchemaException("Record schema is empty");
         }
         var schemaDefs = ThrowingStream.of(list.stream(), InvalidSchemaException.class)
                 .map(rc -> Optional.ofNullable(rc.getAnnotation(Entity.class))
-                        .orElseThrow(() ->
-                                new InvalidSchemaException("Type %s is missing the @Entity annotation and no schema information are given"
+                        .orElseThrow(() -> new InvalidSchemaException(
+                                "Type %s is missing the @Entity annotation and no schema information are given"
                                         .formatted(rc.getName()))))
                 .map(Entity::schema)
                 .distinct()
                 .collect(Collectors.toList());
         if (schemaDefs.size() > 1) {
-            throw new InvalidSchemaException("Different schema definitions found on the record types for the same schema");
+            throw new InvalidSchemaException(
+                    "Different schema definitions found on the record types for the same schema");
         }
         var schema = schemaDefs.get(0);
         return this.importSchema(schema.id(), schema.version(), list.stream());
     }
 
-    public Schema importSchema(String id, Long version, Class<? extends Record>... recordClasses) throws InvalidSchemaException {
+    public Schema importSchema(String id, Long version, Class<? extends Record>... recordClasses)
+            throws InvalidSchemaException {
         return this.importSchema(id, version, Arrays.stream(recordClasses));
     }
 
-    public Schema importSchema(String id, Long version, Stream<Class<? extends Record>> recordClasses) throws InvalidSchemaException {
+    public Schema importSchema(String id, Long version, Stream<Class<? extends Record>> recordClasses)
+            throws InvalidSchemaException {
         return this.importSchema(id, version, ThrowingStream.of(recordClasses, InvalidSchemaException.class));
     }
 
-    public Schema importSchema(String id, Long version, ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses) throws InvalidSchemaException {
+    public Schema importSchema(
+            String id, Long version, ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses)
+            throws InvalidSchemaException {
         var entityTypes = recordClasses
                 .peek(this.recordEntityRegistry::register)
                 .map(RecordSchemaProvider::typeOfRecord)
@@ -101,12 +107,14 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         if (params.containsKey("classes")) {
             var classes = params.get("classes");
             if (classes instanceof Iterable<?> classList) {
-                ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses = ThrowingStream.of(StreamSupport.stream(classList.spliterator(), false), InvalidSchemaException.class)
+                ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses = ThrowingStream.of(
+                                StreamSupport.stream(classList.spliterator(), false), InvalidSchemaException.class)
                         .map(RecordSchemaProvider::mapToClass)
                         .map(RecordSchemaProvider::ensureRecord);
                 return this.importSchema(recordClasses);
             } else {
-                throw new InvalidSchemaException("Unknown type %s in configuration for classes".formatted(classes.getClass().getName()));
+                throw new InvalidSchemaException("Unknown type %s in configuration for classes"
+                        .formatted(classes.getClass().getName()));
             }
         } else {
             throw new InvalidSchemaException("Cannot find classes key in the configuration");
@@ -115,7 +123,8 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
 
     @Override
     public Schema loadSchema(ConfigNode node) throws InvalidSchemaException {
-        ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses = ThrowingStream.of(node.asStringList("classes"), InvalidSchemaException.class)
+        ThrowingStream<Class<? extends Record>, InvalidSchemaException> recordClasses = ThrowingStream.of(
+                        node.asStringList("classes"), InvalidSchemaException.class)
                 .map(RecordSchemaProvider::mapToClass)
                 .map(RecordSchemaProvider::ensureRecord);
         return this.importSchema(recordClasses);
@@ -129,19 +138,24 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
                 propertiesOfRecord(recordClass),
                 migrationsOfRecord(id, recordClass));
     }
-    
-    private static Set<EntityTypeProperty>propertiesOfRecord(Class<? extends Record> recordClass) throws InvalidSchemaException {
+
+    private static Set<EntityTypeProperty> propertiesOfRecord(Class<? extends Record> recordClass)
+            throws InvalidSchemaException {
         return ThrowingStream.of(Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
-                        .filter(f -> f.getAnnotation(EntityIdField.class) == null)
-                        .map(RecordSchemaProvider::propertyOfField)
-                        .collect(Collectors.toSet());
+                .filter(f -> f.getAnnotation(EntityIdField.class) == null)
+                .map(RecordSchemaProvider::propertyOfField)
+                .collect(Collectors.toSet());
     }
 
     private static EntityTypeProperty propertyOfField(Field field) throws InvalidSchemaException {
-        if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType())) {
+        if (Set.class.isAssignableFrom(field.getType())
+                || List.class.isAssignableFrom(field.getType())
+                || Map.class.isAssignableFrom(field.getType())) {
             var fieldAnno = field.getAnnotation(EntityField.class);
             if (fieldAnno == null) {
-                throw new InvalidSchemaException("Missing @EntityField annotation for the field %s of type %s to define the type".formatted(field.getName(), field.getType().getName()));
+                throw new InvalidSchemaException(
+                        "Missing @EntityField annotation for the field %s of type %s to define the type"
+                                .formatted(field.getName(), field.getType().getName()));
             }
             return new cloud.quinimbus.persistence.api.schema.EntityTypeProperty(
                     field.getName(),
@@ -150,12 +164,10 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
                             ? EntityTypeProperty.Structure.SET
                             : List.class.isAssignableFrom(field.getType())
                                     ? EntityTypeProperty.Structure.LIST
-                                    :EntityTypeProperty.Structure.MAP);
+                                    : EntityTypeProperty.Structure.MAP);
         } else {
             return new cloud.quinimbus.persistence.api.schema.EntityTypeProperty(
-                    field.getName(),
-                    typeOfClass(field.getType()),
-                    EntityTypeProperty.Structure.SINGLE);
+                    field.getName(), typeOfClass(field.getType()), EntityTypeProperty.Structure.SINGLE);
         }
     }
 
@@ -173,13 +185,18 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
             return new TimestampPropertyType();
         }
         if (Enum.class.isAssignableFrom(cls)) {
-            var values = Arrays.stream(cls.getEnumConstants()).map(Object::toString).toList();
+            var values =
+                    Arrays.stream(cls.getEnumConstants()).map(Object::toString).toList();
             return new EnumPropertyType(values);
         }
-        if (Long.class.isAssignableFrom(cls) || long.class.isAssignableFrom(cls)
-            || Integer.class.isAssignableFrom(cls) || int.class.isAssignableFrom(cls)
-            || Short.class.isAssignableFrom(cls) || short.class.isAssignableFrom(cls)
-            || Byte.class.isAssignableFrom(cls) || byte.class.isAssignableFrom(cls)) {
+        if (Long.class.isAssignableFrom(cls)
+                || long.class.isAssignableFrom(cls)
+                || Integer.class.isAssignableFrom(cls)
+                || int.class.isAssignableFrom(cls)
+                || Short.class.isAssignableFrom(cls)
+                || short.class.isAssignableFrom(cls)
+                || Byte.class.isAssignableFrom(cls)
+                || byte.class.isAssignableFrom(cls)) {
             return new IntegerPropertyType();
         }
         if (Record.class.isAssignableFrom(cls)) {
@@ -194,7 +211,7 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         }
         throw new InvalidSchemaException("Cannot map class %s to an entity property type".formatted(cls.getName()));
     }
-    
+
     private static Class<?> mapToClass(Object e) throws InvalidSchemaException {
         if (e instanceof String s) {
             try {
@@ -208,11 +225,11 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
             if (e == null) {
                 throw new InvalidSchemaException("null value in classes list found");
             }
-            throw new InvalidSchemaException("Cannot read configured classes value <%s> of type %s as class".formatted(e
-                    .toString(), e.getClass().getName()));
+            throw new InvalidSchemaException("Cannot read configured classes value <%s> of type %s as class"
+                    .formatted(e.toString(), e.getClass().getName()));
         }
     }
-    
+
     private static Class<? extends Record> ensureRecord(Class<?> c) throws InvalidSchemaException {
         if (c.isRecord()) {
             return (Class<? extends Record>) c;
@@ -221,8 +238,10 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         }
     }
 
-    private static Set<EntityTypeMigration> migrationsOfRecord(String entityId, Class<? extends Record> recordClass) throws InvalidSchemaException {
-        var propertyBasedMigrations = ThrowingStream.of(Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
+    private static Set<EntityTypeMigration> migrationsOfRecord(String entityId, Class<? extends Record> recordClass)
+            throws InvalidSchemaException {
+        var propertyBasedMigrations = ThrowingStream.of(
+                        Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
                 .map(f -> migrationOfField(entityId, f))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -230,15 +249,20 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         return propertyBasedMigrations;
     }
 
-    private static Optional<EntityTypeMigration> migrationOfField(String entityId, Field field) throws InvalidSchemaException {
+    private static Optional<EntityTypeMigration> migrationOfField(String entityId, Field field)
+            throws InvalidSchemaException {
         var fieldAdd = field.getAnnotation(FieldAddMigration.class);
         if (fieldAdd != null) {
-            return Optional.of(new EntityTypeMigration<>("FieldAdd_%s_%s".formatted(entityId, field.getName()), fieldAdd.version(), new PropertyAddMigrationType(Map.of(field.getName(), fieldAdd.value()))));
+            return Optional.of(new EntityTypeMigration<>(
+                    "FieldAdd_%s_%s".formatted(entityId, field.getName()),
+                    fieldAdd.version(),
+                    new PropertyAddMigrationType(Map.of(field.getName(), fieldAdd.value()))));
         }
         return Optional.empty();
     }
-    
-    private static Optional<EntityType.OwningEntityTypeRef> owningEntityTypeOfRecord(Class<? extends Record> recordClass) {
+
+    private static Optional<EntityType.OwningEntityTypeRef> owningEntityTypeOfRecord(
+            Class<? extends Record> recordClass) {
         return Optional.ofNullable(recordClass.getDeclaredAnnotation(Owner.class))
                 .map(a -> new EntityType.OwningEntityTypeRef(Records.idFromRecordClass(a.owningEntity()), a.field()));
     }

@@ -20,14 +20,12 @@ public final class EnumParser implements ValueParser<String> {
             if (this.allowedValues.contains(s)) {
                 return s;
             } else {
-                throw new UnparseableValueException(
-                        "Value %s is not allowed for enum[%s]".formatted(
-                                s,
-                                this.allowedValues.stream().collect(Collectors.joining(", "))));
+                throw new UnparseableValueException("Value %s is not allowed for enum[%s]"
+                        .formatted(s, this.allowedValues.stream().collect(Collectors.joining(", "))));
             }
         } else {
-            throw new UnparseableValueException(
-                    "Cannot read value of type %s as Enum".formatted(o.getClass().getName()));
+            throw new UnparseableValueException("Cannot read value of type %s as Enum"
+                    .formatted(o.getClass().getName()));
         }
     }
 }

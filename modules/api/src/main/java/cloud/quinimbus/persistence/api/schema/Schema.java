@@ -4,6 +4,4 @@ import java.util.Map;
 import lombok.Builder;
 
 @Builder
-public record Schema(String id, Map<String, EntityType> entityTypes, Long version) {
-
-}
+public record Schema(String id, Map<String, EntityType> entityTypes, Long version) {}

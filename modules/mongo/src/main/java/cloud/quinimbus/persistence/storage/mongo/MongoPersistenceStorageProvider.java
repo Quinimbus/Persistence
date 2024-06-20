@@ -12,20 +12,20 @@ import java.util.Optional;
 @Provider(name = "MongoDB storage provider", alias = "mongo", priority = 0)
 public class MongoPersistenceStorageProvider implements PersistenceStorageProvider<MongoSchemaStorage> {
 
-    public MongoSchemaStorage createSchema(PersistenceContext context, String schema, String username, String password, String host) throws PersistenceException {
-        var client = MongoClients.create("mongodb://%s:%s@%s".formatted(
-                username,
-                password,
-                host));
+    public MongoSchemaStorage createSchema(
+            PersistenceContext context, String schema, String username, String password, String host)
+            throws PersistenceException {
+        var client = MongoClients.create("mongodb://%s:%s@%s".formatted(username, password, host));
         return new MongoSchemaStorage(
                 client,
-                context.getSchema(schema).orElseThrow(() -> new PersistenceException("Schema %s not found"
-                        .formatted(schema))),
+                context.getSchema(schema)
+                        .orElseThrow(() -> new PersistenceException("Schema %s not found".formatted(schema))),
                 context);
     }
 
     @Override
-    public MongoSchemaStorage createSchema(PersistenceContext context, Map<String, Object> params) throws PersistenceException {
+    public MongoSchemaStorage createSchema(PersistenceContext context, Map<String, Object> params)
+            throws PersistenceException {
         var schema = Optional.ofNullable(params.get("schema"))
                 .filter(p -> p instanceof String)
                 .map(s -> (String) s)
@@ -49,7 +49,7 @@ public class MongoPersistenceStorageProvider implements PersistenceStorageProvid
     public MongoSchemaStorage createSchema(PersistenceContext context, ConfigNode config) throws PersistenceException {
         var schema = config.asString("schema")
                 .orElseThrow(() -> new PersistenceException("Missing or invalid parameter: schema"));
-        var username =config.asString("username")
+        var username = config.asString("username")
                 .orElseThrow(() -> new PersistenceException("Missing or invalid parameter: username"));
         var password = config.asString("password")
                 .orElseThrow(() -> new PersistenceException("Missing or invalid parameter: password"));

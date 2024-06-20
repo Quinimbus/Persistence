@@ -1,5 +1,3 @@
 package cloud.quinimbus.persistence.api.entity;
 
-public interface StructuredObjectEntryType {
-    
-}
+public interface StructuredObjectEntryType {}

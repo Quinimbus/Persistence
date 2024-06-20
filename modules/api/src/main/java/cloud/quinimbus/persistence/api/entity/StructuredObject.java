@@ -7,9 +7,9 @@ import java.util.function.Function;
 public interface StructuredObject<ET extends StructuredObjectEntryType> {
 
     <PT> PT getProperty(String id);
-    
+
     Optional<StructuredObjectEntry<ET>> getPropertyEntry(String id);
-    
+
     Optional<StructuredObjectEntry<ET>> getPropertyEntry(String id, Object partialValue);
 
     <PT> void setProperty(String id, PT value);
@@ -17,6 +17,6 @@ public interface StructuredObject<ET extends StructuredObjectEntryType> {
     Map<String, Object> getProperties();
 
     Map<String, Object> asBasicMap();
-    
+
     Map<String, Object> asBasicMap(Function<StructuredObjectEntry<ET>, Object> converter);
 }

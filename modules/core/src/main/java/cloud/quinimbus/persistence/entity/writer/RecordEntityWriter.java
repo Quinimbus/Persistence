@@ -7,7 +7,8 @@ import cloud.quinimbus.persistence.api.schema.EntityType;
 
 public class RecordEntityWriter<T extends Record> extends AbstractRecordWriter<T> implements EntityWriter<T> {
 
-    public RecordEntityWriter(EntityType type, Class<T> recordClass, String idField) throws EntityWriterInitialisationException {
+    public RecordEntityWriter(EntityType type, Class<T> recordClass, String idField)
+            throws EntityWriterInitialisationException {
         super(recordClass, type.properties(), idField);
     }
 

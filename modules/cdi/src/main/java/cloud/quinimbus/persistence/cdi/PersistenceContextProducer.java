@@ -23,20 +23,27 @@ public class PersistenceContextProducer {
     private ConfigNode configNode;
 
     public PersistenceContextProducer() {
-        this.persistenceContext = ServiceLoader.load(PersistenceContext.class).findFirst()
+        this.persistenceContext = ServiceLoader.load(PersistenceContext.class)
+                .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Cannot find any PersistenceContext implementation"));
     }
-    
+
     @PostConstruct
     public void init() throws PersistenceException, InvalidSchemaException {
         if (this.configNode != null) {
-            ThrowingStream.of(this.configNode.asNode("schemas")
-                    .map(cn -> cn.stream())
-                    .orElse(Stream.empty()), InvalidSchemaException.class)
+            ThrowingStream.of(
+                            this.configNode
+                                    .asNode("schemas")
+                                    .map(cn -> cn.stream())
+                                    .orElse(Stream.empty()),
+                            InvalidSchemaException.class)
                     .forEach(this::initConfiguredSchema);
-            ThrowingStream.of(this.configNode.asNode("storages")
-                    .map(cn -> cn.stream())
-                    .orElse(Stream.empty()), PersistenceException.class)
+            ThrowingStream.of(
+                            this.configNode
+                                    .asNode("storages")
+                                    .map(cn -> cn.stream())
+                                    .orElse(Stream.empty()),
+                            PersistenceException.class)
                     .forEach(this::initConfiguredStorage);
         }
     }
@@ -50,10 +57,10 @@ public class PersistenceContextProducer {
         var type = node.asString("type")
                 .orElseThrow(() -> new InvalidSchemaException(
                         "Cannot autoconfigure schema %s, type configuration is missing".formatted(node.name())));
-        var provider = this.persistenceContext.getSchemaProvider(type)
-                    .orElseThrow(() -> new InvalidSchemaException(
-                            "Cannot autoconfigure schema %s, no provider for type %s found"
-                                    .formatted(node.name(), type)));
+        var provider = this.persistenceContext
+                .getSchemaProvider(type)
+                .orElseThrow(() -> new InvalidSchemaException(
+                        "Cannot autoconfigure schema %s, no provider for type %s found".formatted(node.name(), type)));
         this.persistenceContext.importSchema(provider, node);
     }
 
@@ -64,10 +71,10 @@ public class PersistenceContextProducer {
         var schema = node.asString("schema")
                 .orElseThrow(() -> new PersistenceException(
                         "Cannot autoconfigure storage %s, schema configuration is missing".formatted(node.name())));
-        var provider = this.persistenceContext.getStorageProvider(type)
-                    .orElseThrow(() -> new PersistenceException(
-                            "Cannot autoconfigure storage %s, no provider for type %s found"
-                                    .formatted(node.name(), type)));
+        var provider = this.persistenceContext
+                .getStorageProvider(type)
+                .orElseThrow(() -> new PersistenceException(
+                        "Cannot autoconfigure storage %s, no provider for type %s found".formatted(node.name(), type)));
         var storage = provider.createSchema(this.persistenceContext, node);
         this.persistenceContext.setSchemaStorage(schema, storage);
         this.persistenceContext.upgradeSchema(storage);

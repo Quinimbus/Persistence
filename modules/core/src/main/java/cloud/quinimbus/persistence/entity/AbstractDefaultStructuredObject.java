@@ -40,18 +40,14 @@ abstract class AbstractDefaultStructuredObject<ET extends StructuredObjectEntryT
     @Override
     public Map<String, Object> asBasicMap() {
         return this.properties.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> valueForMap(e.getValue())));
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> valueForMap(e.getValue())));
     }
 
     @Override
     public Map<String, Object> asBasicMap(Function<StructuredObjectEntry<ET>, Object> converter) {
         return this.properties.entrySet().stream()
                 .map(e -> Map.entry(e.getKey(), valueForMap(e.getKey(), e.getValue(), converter)))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private Object valueForMap(Object o) {
@@ -74,8 +70,8 @@ abstract class AbstractDefaultStructuredObject<ET extends StructuredObjectEntryT
         } else if (o instanceof Set s) {
             return s.stream().map(e -> valueForMap(key, e, converter)).collect(Collectors.toSet());
         } else if (o instanceof Map<?, ?> m) {
-            return m.entrySet().stream().collect(
-                    Collectors.toMap(e -> e.getKey(), e -> valueForMap(key, e.getValue(), converter)));
+            return m.entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getKey(), e -> valueForMap(key, e.getValue(), converter)));
         } else {
             return converter.apply(this.getPropertyEntry(key, o)
                     .orElseThrow(() -> new IllegalStateException("Missing property entry for " + key)));
@@ -84,36 +80,19 @@ abstract class AbstractDefaultStructuredObject<ET extends StructuredObjectEntryT
 
     protected DefaultEntityPropertyEntry mapToPartialEntry(EntityTypeProperty etp, Object value, Object partialValue) {
         return switch (etp.structure()) {
-            case SINGLE ->
-                Objects.equals(partialValue, value)
-                ? new DefaultEntityPropertyEntry(
-                etp.name(),
-                value,
-                etp.type(),
-                false) : null;
-            case LIST ->
-                (value != null && value instanceof List l && l.contains(partialValue))
-                ? new DefaultEntityPropertyEntry(
-                etp.name(),
-                partialValue,
-                etp.type(),
-                true) : null;
-            case MAP ->
-                (value != null && value instanceof Map m && m.containsValue(partialValue))
-                ? new DefaultEntityPropertyEntry(
-                        etp.name(),
-                        partialValue,
-                        etp.type(),
-                        true) : null;
-            case SET ->
-                (value != null && value instanceof Set s && s.contains(partialValue))
-                ? new DefaultEntityPropertyEntry(
-                etp.name(),
-                partialValue,
-                etp.type(),
-                true) : null;
-            default ->
-                throw new IllegalStateException();
+            case SINGLE -> Objects.equals(partialValue, value)
+                    ? new DefaultEntityPropertyEntry(etp.name(), value, etp.type(), false)
+                    : null;
+            case LIST -> (value != null && value instanceof List l && l.contains(partialValue))
+                    ? new DefaultEntityPropertyEntry(etp.name(), partialValue, etp.type(), true)
+                    : null;
+            case MAP -> (value != null && value instanceof Map m && m.containsValue(partialValue))
+                    ? new DefaultEntityPropertyEntry(etp.name(), partialValue, etp.type(), true)
+                    : null;
+            case SET -> (value != null && value instanceof Set s && s.contains(partialValue))
+                    ? new DefaultEntityPropertyEntry(etp.name(), partialValue, etp.type(), true)
+                    : null;
+            default -> throw new IllegalStateException();
         };
     }
 }

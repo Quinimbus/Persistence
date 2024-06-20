@@ -6,17 +6,10 @@ import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.annotation.Schema;
 
 public class ModelV1 {
-    
+
     @Embeddable
-    public static record Author(String name) {
-        
-    }
+    public static record Author(String name) {}
 
     @Entity(schema = @Schema(id = "blog", version = 1))
-    public static record BlogEntry(
-            @EntityIdField String id,
-            String title,
-            Author author) {
-
-    }
+    public static record BlogEntry(@EntityIdField String id, String title, Author author) {}
 }

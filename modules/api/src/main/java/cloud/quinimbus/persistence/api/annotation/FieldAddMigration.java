@@ -8,8 +8,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FieldAddMigration {
-    
+
     long version();
-    
+
     String value();
 }

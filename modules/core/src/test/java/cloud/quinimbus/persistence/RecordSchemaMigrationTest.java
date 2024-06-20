@@ -23,30 +23,35 @@ public class RecordSchemaMigrationTest {
 
     @BeforeEach
     public void init() throws IOException {
-        LogManager.getLogManager().readConfiguration(RecordSchemaMigrationTest.class.getResourceAsStream("logging.properties"));
-        this.persistenceContext = ServiceLoader.load(PersistenceContext.class).findFirst().get();
+        LogManager.getLogManager()
+                .readConfiguration(RecordSchemaMigrationTest.class.getResourceAsStream("logging.properties"));
+        this.persistenceContext =
+                ServiceLoader.load(PersistenceContext.class).findFirst().get();
     }
 
     @Test
-    public void testMigration() throws InvalidSchemaException, PersistenceException, EntityWriterInitialisationException, EntityReaderInitialisationException {
+    public void testMigration()
+            throws InvalidSchemaException, PersistenceException, EntityWriterInitialisationException,
+                    EntityReaderInitialisationException {
         var schema = this.persistenceContext.importRecordSchema(ModelV1.BlogEntry.class);
         var storageProvider = new InMemoryPersistenceStorageProvider();
         var storage = storageProvider.createSchema(persistenceContext, schema.id());
-        
+
         var blogEntryType = schema.entityTypes().get("blogEntry");
         var blogEntryReader = new RecordEntityReader<>(blogEntryType, ModelV1.BlogEntry.class, "id");
         var entry = new ModelV1.BlogEntry("first", "My first entry", new ModelV1.Author("John Doe"));
         storage.save(blogEntryReader.read(entry));
-        
+
         schema = this.persistenceContext.importRecordSchema(ModelV2.BlogEntry.class);
         this.persistenceContext.upgradeSchema(storage);
         var metadata = storage.getSchemaMetadata();
         Assertions.assertEquals(2, metadata.version());
         Assertions.assertEquals(2, metadata.entityTypeMigrationRuns().size());
-        
+
         blogEntryType = schema.entityTypes().get("blogEntry");
         var blogEntryWriter = new RecordEntityWriter<>(blogEntryType, ModelV2.BlogEntry.class, "id");
-        var migratedEntry = storage.find(blogEntryType, "first").map(blogEntryWriter::write).orElseThrow();
+        var migratedEntry =
+                storage.find(blogEntryType, "first").map(blogEntryWriter::write).orElseThrow();
         Assertions.assertEquals(ModelV2.Category.UNSORTED, migratedEntry.category());
         Assertions.assertEquals("unknown", migratedEntry.author().subtext());
     }
