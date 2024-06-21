@@ -3,8 +3,8 @@ package cloud.quinimbus.persistence.cdi;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.repositories.InvalidRepositoryDefinitionException;
 import cloud.quinimbus.persistence.repositories.RepositoryFactory;
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
 
 public abstract class AbstractRecordRepositoryProducer {
 

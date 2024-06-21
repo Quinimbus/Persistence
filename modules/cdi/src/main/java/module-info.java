@@ -5,7 +5,8 @@ module cloud.quinimbus.persistence.cdi {
     requires cloud.quinimbus.config.cdi;
     requires cloud.quinimbus.persistence.api;
     requires cloud.quinimbus.persistence.repositories;
-    requires jakarta.enterprise.cdi.api;
-    requires java.annotation;
-    requires jakarta.inject.api;
+    requires jakarta.annotation;
+    requires jakarta.cdi;
+    requires jakarta.inject;
+    requires throwing.streams;
 }

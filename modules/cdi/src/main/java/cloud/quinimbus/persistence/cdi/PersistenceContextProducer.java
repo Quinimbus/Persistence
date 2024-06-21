@@ -7,10 +7,10 @@ import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import java.util.ServiceLoader;
 import java.util.stream.Stream;
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 @ApplicationScoped
