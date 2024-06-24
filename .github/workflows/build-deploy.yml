@@ -8,14 +8,14 @@ jobs:
 
     steps:
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.7.0
+        uses: supercharge/mongodb-github-action@1.11.0
         with:
           mongodb-version: 5.0
           mongodb-username: mongoroot
           mongodb-password: mongorootpassword
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up JDK 21
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'adopt'
