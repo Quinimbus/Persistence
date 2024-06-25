@@ -8,6 +8,7 @@ import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.storage.inmemory.InMemoryPersistenceStorageProvider;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 public class SchemaTest {
@@ -33,7 +34,8 @@ public class SchemaTest {
         var persistenceContext = new PersistenceContextImpl();
         FunctionalSchemaProvider schemaProvider = () -> Schema.builder()
                 .id("SchemaTest")
-                .entityTypes(Map.of("", EntityType.builder().build()))
+                .entityTypes(Map.of(
+                        "myEntity", EntityType.builder().properties(Set.of()).build()))
                 .build();
         persistenceContext.importSchema(schemaProvider);
         var storage = new InMemoryPersistenceStorageProvider();

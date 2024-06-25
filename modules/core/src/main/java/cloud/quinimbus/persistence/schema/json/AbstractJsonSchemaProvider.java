@@ -1,5 +1,6 @@
 package cloud.quinimbus.persistence.schema.json;
 
+import cloud.quinimbus.persistence.api.entity.EmbeddedPropertyHandler;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.EntityTypeMigrationType;
@@ -105,6 +106,24 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
         return migration;
     }
 
+    private Class<? extends EmbeddedPropertyHandler> getEmbeddedPropertyHandlerClass(ObjectNode node) {
+        var handlerClassNode = node.get("handlerClass");
+        if (handlerClassNode != null && !handlerClassNode.isNull()) {
+            try {
+                var classToLoad = Class.forName(handlerClassNode.asText());
+                if (EmbeddedPropertyHandler.class.isAssignableFrom(classToLoad)) {
+                    return (Class<? extends EmbeddedPropertyHandler>) classToLoad;
+                } else {
+                    throw new IllegalArgumentException("The embedded property handler %S has to implement %s"
+                            .formatted(classToLoad.getSimpleName(), EmbeddedPropertyHandler.class.getSimpleName()));
+                }
+            } catch (ClassNotFoundException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+        return null;
+    }
+
     private class EntityTypePropertyTypeDeserializer extends JsonDeserializer<EntityTypePropertyType> {
 
         @Override
@@ -139,7 +158,8 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
                                 ctxt.getParser().getCodec(), eon);
                         var migrations = AbstractJsonSchemaProvider.this.importMigrations(
                                 ctxt.getParser().getCodec(), eon);
-                        return new EmbeddedPropertyType(properties, migrations);
+                        var handlerClass = AbstractJsonSchemaProvider.this.getEmbeddedPropertyHandlerClass(eon);
+                        return new EmbeddedPropertyType(properties, migrations, handlerClass);
                     } else {
                         throw new IllegalStateException();
                     }

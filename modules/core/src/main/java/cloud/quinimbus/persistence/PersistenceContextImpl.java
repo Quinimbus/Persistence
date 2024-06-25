@@ -5,6 +5,7 @@ import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
+import cloud.quinimbus.persistence.api.entity.EmbeddedPropertyHandler;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationException;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
@@ -12,6 +13,7 @@ import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
 import cloud.quinimbus.persistence.api.lifecycle.LifecycleEvent;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
 import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
@@ -46,6 +48,7 @@ import cloud.quinimbus.persistence.storage.inmemory.InMemorySchemaStorage;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -53,8 +56,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.java.Log;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
@@ -166,37 +171,64 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     @Override
     public Schema importSchema(PersistenceSchemaProvider provider) throws InvalidSchemaException {
-        var schema = provider.loadSchema(Map.of());
-        schemas.put(schema.id(), schema);
-        return schema;
+        return this.importSchema(provider.loadSchema(Map.of()));
     }
 
     @Override
     public Schema importSchema(PersistenceSchemaProvider provider, ConfigNode configNode)
             throws InvalidSchemaException {
-        var schema = provider.loadSchema(configNode);
-        schemas.put(schema.id(), schema);
-        return schema;
+        return this.importSchema(provider.loadSchema(configNode));
     }
 
     @Override
     public Schema importSchemaFromSingleJson(Reader reader) throws IOException, InvalidSchemaException {
-        var schema = ThrowingOptional.ofOptional(this.getSchemaProvider("singlefile"), IOException.class)
+        return this.importSchema(ThrowingOptional.ofOptional(this.getSchemaProvider("singlefile"), IOException.class)
                 .map(p -> (SingleJsonSchemaProvider) p)
                 .map(p -> p.importSchema(reader))
-                .orElseThrow(() -> new InvalidSchemaException("Cannot find the singlefile schema provider"));
-        schemas.put(schema.id(), schema);
-        return schema;
+                .orElseThrow(() -> new InvalidSchemaException("Cannot find the singlefile schema provider")));
     }
 
     @Override
     public Schema importRecordSchema(Class<? extends Record>... recordClasses) throws InvalidSchemaException {
-        var schema = ThrowingOptional.ofOptional(this.getSchemaProvider("record"), InvalidSchemaException.class)
-                .map(p -> (RecordSchemaProvider) p)
-                .map(p -> p.importSchema(recordClasses))
-                .orElseThrow(() -> new InvalidSchemaException("Cannot find the record schema provider"));
+        return this.importSchema(
+                ThrowingOptional.ofOptional(this.getSchemaProvider("record"), InvalidSchemaException.class)
+                        .map(p -> (RecordSchemaProvider) p)
+                        .map(p -> p.importSchema(recordClasses))
+                        .orElseThrow(() -> new InvalidSchemaException("Cannot find the record schema provider")));
+    }
+
+    private Schema importSchema(Schema schema) {
         schemas.put(schema.id(), schema);
+        schema.entityTypes().values().forEach(t -> this.importEmbeddableSchemaHandlers(schema.id(), t));
         return schema;
+    }
+
+    private List<EmbeddedPropertyHandler> importEmbeddableSchemaHandlers(String schema, EntityType type) {
+        return type.properties().stream().flatMap(p -> this.importEmbeddedSchemaHandler(schema, type, p)).toList();
+    }
+
+    private Stream<EmbeddedPropertyHandler> importEmbeddedSchemaHandler(String schema, EntityType type, EntityTypeProperty pt) throws IllegalStateException, IllegalArgumentException {
+        if (pt.type() instanceof EmbeddedPropertyType(Set<EntityTypeProperty> properties, Set<EntityTypeMigration> migrations, Class<? extends EmbeddedPropertyHandler> handlerClass)) {
+            if (handlerClass != null) {
+                try {
+                    var handler = handlerClass.getConstructor(PersistenceContext.class, String.class, String.class, String.class)
+                            .newInstance(this, schema, type.id(), pt.name());
+                    return Stream.of(handler);
+                } catch (NoSuchMethodException ex) {
+                    throw new IllegalArgumentException(
+                            "Cannot find a suitable constructor for %s".formatted(handlerClass.getSimpleName()),
+                            ex);
+                } catch (SecurityException
+                        | InstantiationException
+                        | IllegalAccessException
+                        | IllegalArgumentException
+                        | InvocationTargetException ex) {
+                    throw new IllegalStateException(
+                            "Cannot call the constructor of %s".formatted(handlerClass.getSimpleName()), ex);
+                }
+            }
+        }
+        return Stream.empty();
     }
 
     @Override
