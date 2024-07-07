@@ -78,7 +78,8 @@ public class DefaultEntityTest {
                 "number",
                 13,
                 "embedded",
-                new DefaultEmbeddedObject(new String[] {"embedded"}, type, Map.of("string", "embedded"), embeddedType));
+                new DefaultEmbeddedObject(
+                        new String[] {"embedded"}, type, Map.of("string", "embedded"), Map.of(), embeddedType));
         return new DefaultEntity<>("first", type, properties);
     }
 

@@ -65,8 +65,19 @@ public interface PersistenceContext {
 
     <K> Entity<K> newEntity(K id, EntityType type, Map<String, Object> properties) throws UnparseableValueException;
 
+    <K> Entity<K> newEntity(K id, EntityType type, Map<String, Object> properties, Map<String, Object> transientFields)
+            throws UnparseableValueException;
+
     EmbeddedObject newEmbedded(
             EmbeddedPropertyType type, EntityType parentType, List<String> path, Map<String, Object> properties)
+            throws UnparseableValueException;
+
+    EmbeddedObject newEmbedded(
+            EmbeddedPropertyType type,
+            EntityType parentType,
+            List<String> path,
+            Map<String, Object> properties,
+            Map<String, Object> transientFields)
             throws UnparseableValueException;
 
     Schema importSchema(PersistenceSchemaProvider provider) throws InvalidSchemaException;

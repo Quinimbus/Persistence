@@ -5,6 +5,7 @@ import cloud.quinimbus.persistence.api.entity.StructuredObjectEntry;
 import cloud.quinimbus.persistence.api.entity.StructuredObjectEntryType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -13,13 +14,21 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 
-@EqualsAndHashCode
+@EqualsAndHashCode(exclude = "transientFields")
 abstract class AbstractDefaultStructuredObject<ET extends StructuredObjectEntryType> implements StructuredObject<ET> {
 
     protected final Map<String, Object> properties;
 
+    protected final Map<String, Object> transientFields;
+
     public AbstractDefaultStructuredObject(Map<String, Object> properties) {
         this.properties = properties;
+        this.transientFields = new LinkedHashMap<>();
+    }
+
+    public AbstractDefaultStructuredObject(Map<String, Object> properties, Map<String, Object> transientFields) {
+        this.properties = properties;
+        this.transientFields = transientFields;
     }
 
     @Override
@@ -38,6 +47,21 @@ abstract class AbstractDefaultStructuredObject<ET extends StructuredObjectEntryT
     }
 
     @Override
+    public Map<String, Object> getTransientFields() {
+        return Collections.unmodifiableMap(this.transientFields);
+    }
+
+    @Override
+    public void clearTransientFields() {
+        this.transientFields.clear();
+        this.properties.values().forEach(o -> {
+            if (o instanceof StructuredObject so) {
+                so.clearTransientFields();
+            }
+        });
+    }
+
+    @Override
     public Map<String, Object> asBasicMap() {
         return this.properties.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> valueForMap(e.getValue())));
@@ -48,6 +72,11 @@ abstract class AbstractDefaultStructuredObject<ET extends StructuredObjectEntryT
         return this.properties.entrySet().stream()
                 .map(e -> Map.entry(e.getKey(), valueForMap(e.getKey(), e.getValue(), converter)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    @Override
+    public boolean hasProperty(String id) {
+        return this.properties.containsKey(id);
     }
 
     private Object valueForMap(Object o) {

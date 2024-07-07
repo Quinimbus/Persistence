@@ -33,8 +33,12 @@ public class DefaultEmbeddedObject extends AbstractDefaultStructuredObject<Entit
     private final Map<String, EntityTypeProperty> embeddedPropertyTypes;
 
     public DefaultEmbeddedObject(
-            String[] path, EntityType parentType, Map<String, Object> properties, EmbeddedPropertyType propertyType) {
-        super(properties);
+            String[] path,
+            EntityType parentType,
+            Map<String, Object> properties,
+            Map<String, Object> transientFields,
+            EmbeddedPropertyType propertyType) {
+        super(properties, transientFields);
         this.path = path;
         this.parentType = parentType;
         this.propertyType = propertyType;

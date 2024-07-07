@@ -33,6 +33,12 @@ public class DefaultEntity<K> extends AbstractDefaultStructuredObject<EntityType
         this.type = type;
     }
 
+    public DefaultEntity(K id, EntityType type, Map<String, Object> properties, Map<String, Object> transientFields) {
+        super(new LinkedHashMap<>(properties), new LinkedHashMap<>(transientFields));
+        this.id = id;
+        this.type = type;
+    }
+
     public DefaultEntity(Entity<K> entity) {
         super(new LinkedHashMap<>(entity.getProperties()));
         this.id = entity.getId();

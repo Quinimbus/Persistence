@@ -19,4 +19,10 @@ public interface StructuredObject<ET extends StructuredObjectEntryType> {
     Map<String, Object> asBasicMap();
 
     Map<String, Object> asBasicMap(Function<StructuredObjectEntry<ET>, Object> converter);
+
+    Map<String, Object> getTransientFields();
+
+    void clearTransientFields();
+
+    boolean hasProperty(String id);
 }

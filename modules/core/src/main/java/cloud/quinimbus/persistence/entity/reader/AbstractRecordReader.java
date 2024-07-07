@@ -7,6 +7,8 @@ import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
 import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -21,11 +23,15 @@ public class AbstractRecordReader<T extends Record> {
     private final Map<String, Method> propertyFieldGetters;
 
     private final Map<String, Function<Object, Object>> propertyFieldValueReaders;
+    
+    private final Map<String, Method> transientFieldGetters;
 
     public AbstractRecordReader(EntityType type, Set<EntityTypeProperty> properties, Class<T> recordClass)
             throws EntityReaderInitialisationException {
         try {
             this.propertyFieldGetters = createPropertyFieldGetters(properties, recordClass);
+            this.transientFieldGetters = createTransientFieldGetters(
+                    properties.stream().map(EntityTypeProperty::name).collect(Collectors.toSet()), recordClass);
             this.propertyFieldValueReaders = createPropertyFieldValueReaders(properties, type, recordClass);
         } catch (NoSuchMethodException | SecurityException ex) {
             throw new EntityReaderInitialisationException(
@@ -38,6 +44,13 @@ public class AbstractRecordReader<T extends Record> {
         return ThrowingStream.of(properties.stream(), NoSuchMethodException.class)
                 .map(p -> Map.entry(p.name(), recordClass.getMethod(p.name())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static <T extends Record> Map<String, Method> createTransientFieldGetters(
+            Set<String> properties, Class<T> recordClass) {
+        return Arrays.stream(recordClass.getRecordComponents())
+                .filter(rc -> !properties.contains(rc.getName()))
+                .collect(Collectors.toMap(RecordComponent::getName, RecordComponent::getAccessor));
     }
 
     private static <T extends Record> Map<String, Function<Object, Object>> createPropertyFieldValueReaders(
@@ -130,6 +143,14 @@ public class AbstractRecordReader<T extends Record> {
                         this.propertyFieldValueReaders
                                 .get(e.getKey())
                                 .apply(e.getValue().get())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    protected Map<String, Object> getTransientFields(T source) throws ReflectiveOperationException {
+        return ThrowingStream.of(this.transientFieldGetters.entrySet().stream(), ReflectiveOperationException.class)
+                .map(e -> Optional.ofNullable(e.getValue().invoke(source)).map(v -> Map.entry(e.getKey(), v)))
+                .filter(Optional::isPresent)
+                .map(Optional::orElseThrow)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

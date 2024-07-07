@@ -53,8 +53,16 @@ public class AbstractRecordWriter<T extends Record> {
                 .map(Parameter::getName)
                 .map(n -> n.equals(idField)
                         ? (Function<StructuredObject, Object>) o -> o instanceof Entity e ? e.getId() : null
-                        : (Function<StructuredObject, Object>) o -> o.getProperty(n))
+                        : (Function<StructuredObject, Object>) o -> getPropertyOrTransientField(o, n))
                 .toList();
+    }
+
+    private static Object getPropertyOrTransientField(StructuredObject object, String name) {
+        if (object.hasProperty(name)) {
+            return object.getProperty(name);
+        } else {
+            return object.getTransientFields().get(name);
+        }
     }
 
     private static <T extends Record> List<Function<Object, Object>> createConstructorParameterValueWriters(

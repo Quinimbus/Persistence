@@ -8,6 +8,7 @@ import cloud.quinimbus.persistence.api.annotation.Embeddable;
 import cloud.quinimbus.persistence.api.annotation.Entity;
 import cloud.quinimbus.persistence.api.annotation.EntityField;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
+import cloud.quinimbus.persistence.api.annotation.EntityTransientField;
 import cloud.quinimbus.persistence.api.annotation.FieldAddMigration;
 import cloud.quinimbus.persistence.api.entity.EmbeddedPropertyHandler;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
@@ -144,6 +145,7 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
             throws InvalidSchemaException {
         return ThrowingStream.of(Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
                 .filter(f -> f.getAnnotation(EntityIdField.class) == null)
+                .filter(f -> f.getAnnotation(EntityTransientField.class) == null)
                 .map(RecordSchemaProvider::propertyOfField)
                 .collect(Collectors.toSet());
     }
@@ -209,6 +211,7 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
                         : embeddableAnno.handler();
                 return new EmbeddedPropertyType(
                         ThrowingStream.of(Arrays.stream(cls.getDeclaredFields()), InvalidSchemaException.class)
+                                .filter(f -> f.getAnnotation(EntityTransientField.class) == null)
                                 .map(RecordSchemaProvider::propertyOfField)
                                 .collect(Collectors.toSet()),
                         migrationsOfRecord(id, cls),

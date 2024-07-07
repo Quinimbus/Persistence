@@ -147,18 +147,31 @@ public class PersistenceContextImpl implements PersistenceContext {
     @Override
     public <K> Entity<K> newEntity(K id, EntityType type, Map<String, Object> properties)
             throws UnparseableValueException {
+        return this.newEntity(id, type, properties, Map.of());
+    }
+
+    @Override
+    public <K> Entity<K> newEntity(K id, EntityType type, Map<String, Object> properties, Map<String, Object> transientFields)
+            throws UnparseableValueException {
         var typeProperties = type.properties().stream().collect(Collectors.toMap(pt -> pt.name(), pt -> pt));
         Map<String, Object> parsedProperties = ThrowingStream.of(
                         properties.entrySet().stream(), UnparseableValueException.class)
                 .filter(e -> typeProperties.containsKey(e.getKey()))
                 .map(e -> Map.entry(e.getKey(), this.parse(type, List.of(), typeProperties.get(e.getKey()), e)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new DefaultEntity<>(id, type, parsedProperties);
+        return new DefaultEntity<>(id, type, parsedProperties, transientFields);
     }
 
     @Override
     public EmbeddedObject newEmbedded(
             EmbeddedPropertyType type, EntityType parentType, List<String> path, Map<String, Object> properties)
+            throws UnparseableValueException {
+        return this.newEmbedded(type, parentType, path, properties, Map.of());
+    }
+
+    @Override
+    public EmbeddedObject newEmbedded(
+            EmbeddedPropertyType type, EntityType parentType, List<String> path, Map<String, Object> properties, Map<String, Object> transientFields)
             throws UnparseableValueException {
         var typeProperties = type.properties().stream().collect(Collectors.toMap(pt -> pt.name(), pt -> pt));
         Map<String, Object> parsedProperties = ThrowingStream.of(
@@ -166,7 +179,7 @@ public class PersistenceContextImpl implements PersistenceContext {
                 .filter(e -> typeProperties.containsKey(e.getKey()))
                 .map(e -> Map.entry(e.getKey(), this.parse(parentType, path, typeProperties.get(e.getKey()), e)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new DefaultEmbeddedObject(path.toArray(new String[] {}), parentType, parsedProperties, type);
+        return new DefaultEmbeddedObject(path.toArray(new String[] {}), parentType, parsedProperties, transientFields, type);
     }
 
     @Override
@@ -221,7 +234,6 @@ public class PersistenceContextImpl implements PersistenceContext {
                 } catch (SecurityException
                         | InstantiationException
                         | IllegalAccessException
-                        | IllegalArgumentException
                         | InvocationTargetException ex) {
                     throw new IllegalStateException(
                             "Cannot call the constructor of %s".formatted(handlerClass.getSimpleName()), ex);

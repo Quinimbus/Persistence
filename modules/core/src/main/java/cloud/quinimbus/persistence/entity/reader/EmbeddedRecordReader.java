@@ -27,7 +27,8 @@ public class EmbeddedRecordReader<T extends Record> extends AbstractRecordReader
 
     public EmbeddedObject readRecord(T source) {
         try {
-            return new DefaultEmbeddedObject(this.path, this.parentType, this.getProperties(source), this.type);
+            return new DefaultEmbeddedObject(
+                    this.path, this.parentType, this.getProperties(source), this.getTransientFields(source), this.type);
         } catch (ReflectiveOperationException ex) {
             throw new EntityReaderReadException("Error reading the source object %s".formatted(source.toString()), ex);
         }
