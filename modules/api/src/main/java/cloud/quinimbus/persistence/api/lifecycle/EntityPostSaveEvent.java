@@ -1,6 +1,6 @@
 package cloud.quinimbus.persistence.api.lifecycle;
 
 import cloud.quinimbus.persistence.api.entity.Entity;
-import java.util.List;
+import java.util.Set;
 
-public record EntityPostSaveEvent<K>(Entity<K> entity, List<String> mutatedProperties) implements LifecycleEvent<K> {}
+public record EntityPostSaveEvent<K>(Entity<K> entity, Set<String> mutatedProperties) implements LifecycleEvent<K> {}

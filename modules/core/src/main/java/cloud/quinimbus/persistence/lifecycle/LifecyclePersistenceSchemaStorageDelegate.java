@@ -37,7 +37,7 @@ public class LifecyclePersistenceSchemaStorageDelegate extends PersistenceSchema
 
     @Override
     public <K> void save(Entity<K> entity) throws PersistenceException {
-        var mutatedProperties = new ArrayList<String>();
+        var mutatedProperties = new HashSet<String>();
         super.find(entity.getType(), entity.getId())
                 .ifPresentOrElse(
                         oldEntity -> {

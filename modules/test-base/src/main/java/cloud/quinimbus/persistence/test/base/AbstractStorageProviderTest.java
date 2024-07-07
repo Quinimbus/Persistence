@@ -244,9 +244,7 @@ public abstract class AbstractStorageProviderTest {
         var entryType = schema.entityTypes().get("entry");
         this.persistenceContext.onLifecycleEvent(schema.id(), EntityPostSaveEvent.class, entryType, e -> {
             var entity = e.entity();
-            var justCreatedMutated = e.mutatedProperties().size() == 1
-                    && e.mutatedProperties().get(0).equals("created");
-            if (!justCreatedMutated) {
+            if (entity.getProperty("created") == null) {
                 entity.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
                 try {
                     storage.save(entity);
