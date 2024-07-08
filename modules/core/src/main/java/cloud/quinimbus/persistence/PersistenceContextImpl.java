@@ -74,11 +74,14 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     private final Map<String, PersistenceStorageProvider<? extends PersistenceSchemaStorage>> schemaStorageProviders;
 
+    private final Map<String, List<EmbeddedPropertyHandler>> embeddedPropertyHandlers;
+
     public PersistenceContextImpl() {
         this.schemas = new LinkedHashMap<>();
         this.schemaStorages = new LinkedHashMap<>();
         this.schemaProviders = new LinkedHashMap<>();
         this.schemaStorageProviders = new LinkedHashMap<>();
+        this.embeddedPropertyHandlers = new LinkedHashMap<>();
         ServiceLoader.load(PersistenceSchemaProvider.class).forEach(sp -> {
             var providerAnno = sp.getClass().getAnnotation(Provider.class);
             if (providerAnno == null) {
@@ -128,6 +131,7 @@ public class PersistenceContextImpl implements PersistenceContext {
             storage = new LifecyclePersistenceSchemaStorageDelegate(storage);
         }
         this.schemaStorages.put(id, storage);
+        this.embeddedPropertyHandlers.get(id).forEach(EmbeddedPropertyHandler::init);
         return storage;
     }
 
@@ -135,8 +139,7 @@ public class PersistenceContextImpl implements PersistenceContext {
     public PersistenceSchemaStorage setInMemorySchemaStorage(String id) {
         var storage =
                 new LifecyclePersistenceSchemaStorageDelegate(new InMemorySchemaStorage(this, this.schemas.get(id)));
-        this.schemaStorages.put(id, storage);
-        return storage;
+        return this.setSchemaStorage(id, storage);
     }
 
     @Override
@@ -212,12 +215,13 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     private Schema importSchema(Schema schema) {
         schemas.put(schema.id(), schema);
-        schema.entityTypes().values().forEach(t -> this.importEmbeddableSchemaHandlers(schema.id(), t));
+        var handlers = schema.entityTypes().values().stream().flatMap(t -> this.importEmbeddableSchemaHandlers(schema.id(), t)).toList();
+        this.embeddedPropertyHandlers.put(schema.id(), handlers);
         return schema;
     }
 
-    private List<EmbeddedPropertyHandler> importEmbeddableSchemaHandlers(String schema, EntityType type) {
-        return type.properties().stream().flatMap(p -> this.importEmbeddedSchemaHandler(schema, type, p)).toList();
+    private Stream<EmbeddedPropertyHandler> importEmbeddableSchemaHandlers(String schema, EntityType type) {
+        return type.properties().stream().flatMap(p -> this.importEmbeddedSchemaHandler(schema, type, p));
     }
 
     private Stream<EmbeddedPropertyHandler> importEmbeddedSchemaHandler(String schema, EntityType type, EntityTypeProperty pt) throws IllegalStateException, IllegalArgumentException {
