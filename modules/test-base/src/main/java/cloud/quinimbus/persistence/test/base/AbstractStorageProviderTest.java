@@ -1,9 +1,11 @@
 package cloud.quinimbus.persistence.test.base;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
-import cloud.quinimbus.persistence.api.lifecycle.EntityPostSaveEvent;
+import cloud.quinimbus.persistence.api.lifecycle.EntityPreSaveEvent;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import cloud.quinimbus.persistence.common.filter.FilterFactory;
@@ -17,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
@@ -242,15 +245,23 @@ public abstract class AbstractStorageProviderTest {
         var storage = this.persistenceContext.setSchemaStorage(
                 schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
         var entryType = schema.entityTypes().get("entry");
-        this.persistenceContext.onLifecycleEvent(schema.id(), EntityPostSaveEvent.class, entryType, e -> {
+        this.persistenceContext.onLifecycleEvent(schema.id(), EntityPreSaveEvent.class, entryType, e -> {
             var entity = e.entity();
             if (entity.getProperty("created") == null) {
                 entity.setProperty("created", Instant.now().truncatedTo(ChronoUnit.MILLIS));
-                try {
-                    storage.save(entity);
-                } catch (PersistenceException ex) {
-                    throw new IllegalStateException(ex);
-                }
+                e.changedEntity().accept(entity);
+            }
+        });
+        this.persistenceContext.onLifecycleEvent(schema.id(), EntityPreSaveEvent.class, entryType, e -> {
+            var entity = e.entity();
+            System.out.println("[pre-save] " + e.mutatedProperties());
+            var justUpdatecountMutated =
+                    e.mutatedProperties().size() == 1 && e.mutatedProperties().equals(Set.of("updatecount"));
+            if (!justUpdatecountMutated) {
+                System.out.println("[pre-save] setting updatecount...");
+                Integer updatecount = (Integer) entity.getProperty("updatecount");
+                entity.setProperty("updatecount", updatecount == null ? 1 : updatecount + 1);
+                e.changedEntity().accept(entity);
             }
         });
         var firstEntry = this.persistenceContext.newEntity("first", entryType);
@@ -262,6 +273,7 @@ public abstract class AbstractStorageProviderTest {
         firstEntry.setProperty("tags", List.of("election", "politics"));
         storage.save(firstEntry);
         var loadedEntry = storage.find(entryType, "first").orElseThrow();
-        Assertions.assertNotNull(loadedEntry.getProperty("created"));
+        assertNotNull(loadedEntry.getProperty("created"));
+        assertEquals(2, (Number) loadedEntry.getProperty("updatecount"));
     }
 }

@@ -21,6 +21,9 @@
                         "ENUM": ["POLITICS", "SPORTS"]
                     }
                 },
+                "updatecount": {
+                    "type": "INTEGER"
+                },
                 "readcount": {
                     "type": "INTEGER"
                 },
