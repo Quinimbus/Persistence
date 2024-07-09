@@ -1,3 +1,3 @@
 package cloud.quinimbus.persistence.api.lifecycle;
 
-public sealed interface LifecycleEvent<T> permits EntityPostSaveEvent, EntityPreSaveEvent {}
+public sealed interface LifecycleEvent<T> permits EntityPostLoadEvent, EntityPostSaveEvent, EntityPreSaveEvent {}

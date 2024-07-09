@@ -2,6 +2,8 @@ package cloud.quinimbus.persistence.lifecycle;
 
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.Entity;
+import cloud.quinimbus.persistence.api.filter.PropertyFilter;
+import cloud.quinimbus.persistence.api.lifecycle.EntityPostLoadEvent;
 import cloud.quinimbus.persistence.api.lifecycle.EntityPostSaveEvent;
 import cloud.quinimbus.persistence.api.lifecycle.EntityPreSaveEvent;
 import cloud.quinimbus.persistence.api.lifecycle.LifecycleEvent;
@@ -19,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 import org.apache.commons.collections4.SetUtils;
 
 public class LifecyclePersistenceSchemaStorageDelegate extends PersistenceSchemaStorageDelegate {
@@ -49,6 +52,22 @@ public class LifecyclePersistenceSchemaStorageDelegate extends PersistenceSchema
         super.save(preSaveResult.mutatedEntity());
         this.callPostSaveEventConsumers(
                 new DefaultEntity<>(preSaveResult.mutatedEntity()), preSaveResult.mutatedProperties());
+    }
+
+    @Override
+    public <K> Optional<Entity<K>> find(EntityType type, K id) throws PersistenceException {
+        return super.find(type, id).map(this::callPostLoadEventConsumers);
+    }
+
+    @Override
+    public <K> ThrowingStream<Entity<K>, PersistenceException> findAll(EntityType type) throws PersistenceException {
+        return super.<K>findAll(type).map(this::callPostLoadEventConsumers);
+    }
+
+    @Override
+    public <K> ThrowingStream<Entity<K>, PersistenceException> findFiltered(
+            EntityType type, Set<? extends PropertyFilter> propertyFilters) {
+        return super.<K>findFiltered(type, propertyFilters).map(this::callPostLoadEventConsumers);
     }
 
     private <K> Set<String> compareEntities(Entity<K> newEntity, Entity<K> oldEntity) {
@@ -137,5 +156,17 @@ public class LifecyclePersistenceSchemaStorageDelegate extends PersistenceSchema
                 .ifPresent(cl -> {
                     cl.stream().map(c -> (Consumer<EntityPostSaveEvent<K>>) c).forEach(c -> c.accept(postSaveEvent));
                 });
+    }
+
+    private <K> Entity<K> callPostLoadEventConsumers(Entity<K> entity) {
+        var entityRef = new AtomicReference<>(entity);
+        Optional.ofNullable(this.consumers.get(EntityPostLoadEvent.class))
+                .map(m -> m.get(entity.getType().id()))
+                .ifPresent(cl -> {
+                    cl.stream()
+                            .map(c -> (Consumer<EntityPostLoadEvent<K>>) c)
+                            .forEach(c -> c.accept(new EntityPostLoadEvent<>(entityRef.get(), entityRef::set)));
+                });
+        return entityRef.get();
     }
 }
