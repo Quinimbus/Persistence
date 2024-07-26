@@ -2,10 +2,11 @@ package cloud.quinimbus.persistence;
 
 import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.PersistenceException;
-import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.EntityTypeBuilder;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.schema.Schema;
+import cloud.quinimbus.persistence.api.schema.SchemaBuilder;
 import cloud.quinimbus.persistence.storage.inmemory.InMemoryPersistenceStorageProvider;
 import java.util.Map;
 import java.util.Set;
@@ -32,10 +33,11 @@ public class SchemaTest {
     @Test
     public void initSchema() throws PersistenceException, InvalidSchemaException {
         var persistenceContext = new PersistenceContextImpl();
-        FunctionalSchemaProvider schemaProvider = () -> Schema.builder()
+        FunctionalSchemaProvider schemaProvider = () -> SchemaBuilder.builder()
                 .id("SchemaTest")
                 .entityTypes(Map.of(
-                        "myEntity", EntityType.builder().properties(Set.of()).build()))
+                        "myEntity",
+                        EntityTypeBuilder.builder().properties(Set.of()).build()))
                 .build();
         persistenceContext.importSchema(schemaProvider);
         var storage = new InMemoryPersistenceStorageProvider();

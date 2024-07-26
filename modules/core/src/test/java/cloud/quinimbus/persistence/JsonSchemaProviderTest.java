@@ -1,9 +1,10 @@
 package cloud.quinimbus.persistence;
 
-import cloud.quinimbus.persistence.api.schema.EntityType;
-import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
+import cloud.quinimbus.persistence.api.schema.EntityTypeBuilder;
+import cloud.quinimbus.persistence.api.schema.EntityTypeMigrationBuilder;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
-import cloud.quinimbus.persistence.api.schema.Schema;
+import cloud.quinimbus.persistence.api.schema.EntityTypePropertyBuilder;
+import cloud.quinimbus.persistence.api.schema.SchemaBuilder;
 import cloud.quinimbus.persistence.api.schema.migrations.PropertyAddMigrationType;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
@@ -22,40 +23,40 @@ public class JsonSchemaProviderTest {
 
     @Test
     public void initSingleJsonSchema() throws IOException {
-        var schema = Schema.builder()
+        var schema = SchemaBuilder.builder()
                 .id("blog")
                 .version(1L)
                 .entityTypes(Map.of(
                         "entry",
-                        EntityType.builder()
+                        EntityTypeBuilder.builder()
                                 .id("entry")
                                 .properties(Set.of(
-                                        EntityTypeProperty.builder()
+                                        EntityTypePropertyBuilder.builder()
                                                 .name("title")
                                                 .type(new StringPropertyType())
                                                 .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
-                                        EntityTypeProperty.builder()
+                                        EntityTypePropertyBuilder.builder()
                                                 .name("created")
                                                 .type(new TimestampPropertyType())
                                                 .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
-                                        EntityTypeProperty.builder()
+                                        EntityTypePropertyBuilder.builder()
                                                 .name("published")
                                                 .type(new BooleanPropertyType())
                                                 .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
-                                        EntityTypeProperty.builder()
+                                        EntityTypePropertyBuilder.builder()
                                                 .name("category")
                                                 .type(new EnumPropertyType(List.of("UNSORTED", "POLITICS", "SPORTS")))
                                                 .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
-                                        EntityTypeProperty.builder()
+                                        EntityTypePropertyBuilder.builder()
                                                 .name("tags")
                                                 .type(new StringPropertyType())
                                                 .structure(EntityTypeProperty.Structure.LIST)
                                                 .build()))
-                                .migrations(Set.of(EntityTypeMigration.builder()
+                                .migrations(Set.of(EntityTypeMigrationBuilder.builder()
                                         .name("addCategoryField")
                                         .schemaVersion(1L)
                                         .type(new PropertyAddMigrationType(Map.of("category", "UNSORTED")))

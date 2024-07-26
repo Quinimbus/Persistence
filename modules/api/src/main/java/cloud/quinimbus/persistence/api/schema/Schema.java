@@ -1,7 +1,8 @@
 package cloud.quinimbus.persistence.api.schema;
 
+import io.soabase.recordbuilder.core.RecordBuilder;
 import java.util.Map;
-import lombok.Builder;
 
-@Builder
-public record Schema(String id, Map<String, EntityType> entityTypes, Long version) {}
+@RecordBuilder
+@RecordBuilder.Options(useImmutableCollections = true, addSingleItemCollectionBuilders = true)
+public record Schema(String id, Map<String, EntityType> entityTypes, Long version) implements SchemaBuilder.With {}

@@ -6,6 +6,7 @@ import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -19,6 +20,7 @@ public class SingleJsonSchemaProvider extends AbstractJsonSchemaProvider {
 
     public Schema importSchema(Reader reader) throws IOException {
         var mapper = new ObjectMapper();
+        mapper.registerModule(new Jdk8Module());
         var root = mapper.readTree(reader);
         var id = root.get("id").asText();
         var version = root.get("version").asLong();

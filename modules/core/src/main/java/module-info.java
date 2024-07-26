@@ -28,6 +28,7 @@ module cloud.quinimbus.persistence.core {
     requires cloud.quinimbus.tools;
     requires com.fasterxml.jackson.annotation;
     requires com.fasterxml.jackson.databind;
+    requires com.fasterxml.jackson.datatype.jdk8;
     requires com.fasterxml.jackson.core;
     requires org.apache.commons.collections4;
     requires throwing.streams;

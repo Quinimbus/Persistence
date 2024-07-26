@@ -12,5 +12,7 @@ open module cloud.quinimbus.persistence.api {
 
     requires cloud.quinimbus.config.api;
     requires static lombok;
+    requires static io.soabase.recordbuilder.core;
+    requires static java.compiler;
     requires throwing.streams;
 }

@@ -1,8 +1,8 @@
 package cloud.quinimbus.persistence.api.schema;
 
-import lombok.Builder;
-import lombok.With;
+import io.soabase.recordbuilder.core.RecordBuilder;
 
-@Builder
-@With
-public record EntityTypeMigration<T extends EntityTypeMigrationType>(String name, Long schemaVersion, T type) {}
+@RecordBuilder
+@RecordBuilder.Options(useImmutableCollections = true, addSingleItemCollectionBuilders = true)
+public record EntityTypeMigration<T extends EntityTypeMigrationType>(String name, Long schemaVersion, T type)
+        implements EntityTypeMigrationBuilder.With<T> {}

@@ -1,19 +1,18 @@
 package cloud.quinimbus.persistence.api.schema;
 
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
+import io.soabase.recordbuilder.core.RecordBuilder;
 import java.util.Optional;
 import java.util.Set;
-import lombok.Builder;
-import lombok.With;
 
-@Builder
-@With
+@RecordBuilder
+@RecordBuilder.Options(useImmutableCollections = true, addSingleItemCollectionBuilders = true)
 public record EntityType(
         String id,
         Optional<OwningEntityTypeRef> owningEntity,
         Set<EntityTypeProperty> properties,
         Set<EntityTypeMigration> migrations)
-        implements StructuredObjectType {
+        implements StructuredObjectType, EntityTypeBuilder.With {
 
     public static record OwningEntityTypeRef(String id, String field) {}
 
