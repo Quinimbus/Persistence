@@ -10,9 +10,11 @@ import cloud.quinimbus.persistence.api.annotation.EntityField;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.annotation.EntityTransientField;
 import cloud.quinimbus.persistence.api.annotation.FieldAddMigration;
+import cloud.quinimbus.persistence.api.annotation.GenerateID;
 import cloud.quinimbus.persistence.api.entity.EmbeddedPropertyHandler;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
 import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.EntityTypeBuilder;
 import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.EntityTypePropertyType;
@@ -134,11 +136,13 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
 
     private static EntityType typeOfRecord(Class<? extends Record> recordClass) throws InvalidSchemaException {
         var id = Records.idFromRecordClass(recordClass);
-        return new EntityType(
-                id,
-                owningEntityTypeOfRecord(recordClass),
-                propertiesOfRecord(recordClass),
-                migrationsOfRecord(id, recordClass));
+        return EntityTypeBuilder.builder()
+                .id(id)
+                .idGenerator(idGenerator(recordClass))
+                .owningEntity(owningEntityTypeOfRecord(recordClass))
+                .properties(propertiesOfRecord(recordClass))
+                .migrations(migrationsOfRecord(id, recordClass))
+                .build();
     }
 
     private static Set<EntityTypeProperty> propertiesOfRecord(Class<? extends Record> recordClass)
@@ -274,5 +278,14 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
             Class<? extends Record> recordClass) {
         return Optional.ofNullable(recordClass.getDeclaredAnnotation(Owner.class))
                 .map(a -> new EntityType.OwningEntityTypeRef(Records.idFromRecordClass(a.owningEntity()), a.field()));
+    }
+
+    private static Optional<String> idGenerator(Class<? extends Record> recordClass) {
+        return Arrays.stream(recordClass.getDeclaredFields())
+                .filter(f -> f.getAnnotation(EntityIdField.class) != null)
+                .map(f -> f.getAnnotation(EntityIdField.class).generate())
+                .filter(GenerateID::generate)
+                .map(GenerateID::generator)
+                .findAny();
     }
 }

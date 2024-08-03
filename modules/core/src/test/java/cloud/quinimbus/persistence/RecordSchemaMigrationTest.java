@@ -38,7 +38,8 @@ public class RecordSchemaMigrationTest {
         var storage = storageProvider.createSchema(persistenceContext, schema.id());
 
         var blogEntryType = schema.entityTypes().get("blogEntry");
-        var blogEntryReader = new RecordEntityReader<>(blogEntryType, ModelV1.BlogEntry.class, "id");
+        var blogEntryReader =
+                new RecordEntityReader<>(this.persistenceContext, blogEntryType, ModelV1.BlogEntry.class, "id");
         var entry = new ModelV1.BlogEntry("first", "My first entry", new ModelV1.Author("John Doe"));
         storage.save(blogEntryReader.read(entry));
 

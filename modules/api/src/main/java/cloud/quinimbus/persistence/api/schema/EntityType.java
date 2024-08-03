@@ -6,9 +6,13 @@ import java.util.Optional;
 import java.util.Set;
 
 @RecordBuilder
-@RecordBuilder.Options(useImmutableCollections = true, addSingleItemCollectionBuilders = true)
+@RecordBuilder.Options(
+        useImmutableCollections = true,
+        addSingleItemCollectionBuilders = true,
+        addConcreteSettersForOptional = true)
 public record EntityType(
         String id,
+        Optional<String> idGenerator,
         Optional<OwningEntityTypeRef> owningEntity,
         Set<EntityTypeProperty> properties,
         Set<EntityTypeMigration> migrations)

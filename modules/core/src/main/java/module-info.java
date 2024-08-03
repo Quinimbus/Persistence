@@ -1,12 +1,18 @@
 import cloud.quinimbus.persistence.PersistenceContextImpl;
 import cloud.quinimbus.persistence.api.PersistenceContext;
+import cloud.quinimbus.persistence.api.entity.IDGenerator;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
+import cloud.quinimbus.persistence.entity.FriendlyIDGenerator;
+import cloud.quinimbus.persistence.entity.UUIDIDGenerator;
 import cloud.quinimbus.persistence.schema.json.SingleJsonSchemaProvider;
 import cloud.quinimbus.persistence.schema.record.RecordSchemaProvider;
 import cloud.quinimbus.persistence.storage.inmemory.InMemoryPersistenceStorageProvider;
 
 module cloud.quinimbus.persistence.core {
+    provides IDGenerator with
+            FriendlyIDGenerator,
+            UUIDIDGenerator;
     provides PersistenceContext with
             PersistenceContextImpl;
     provides PersistenceStorageProvider with
@@ -15,6 +21,7 @@ module cloud.quinimbus.persistence.core {
             SingleJsonSchemaProvider,
             RecordSchemaProvider;
 
+    uses IDGenerator;
     uses PersistenceContext;
     uses PersistenceSchemaProvider;
     uses PersistenceStorageProvider;
@@ -30,6 +37,7 @@ module cloud.quinimbus.persistence.core {
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.datatype.jdk8;
     requires com.fasterxml.jackson.core;
+    requires friendly.id;
     requires org.apache.commons.collections4;
     requires throwing.streams;
     requires throwing.interfaces;

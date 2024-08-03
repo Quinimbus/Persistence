@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface WeakCRUDRepository<T, K, O> {
 
-    void save(T entity);
+    K save(T entity);
 
     Optional<T> findOne(O owner, K id);
 

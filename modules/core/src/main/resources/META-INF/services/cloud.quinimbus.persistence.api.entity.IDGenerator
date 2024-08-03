@@ -1,0 +1,2 @@
+cloud.quinimbus.persistence.entity.FriendlyIDGenerator
+cloud.quinimbus.persistence.entity.UUIDIDGenerator

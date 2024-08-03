@@ -1,23 +1,24 @@
 package cloud.quinimbus.persistence.repositories;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.annotation.Entity;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.annotation.EntityTypeClass;
+import cloud.quinimbus.persistence.api.annotation.GenerateID;
 import cloud.quinimbus.persistence.api.annotation.Schema;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class CRUDRepositoryTest {
 
     @Entity(schema = @Schema(id = "crudblog", version = 1L))
-    public static record BlogEntry(@EntityIdField String id, String title) {}
+    public static record BlogEntry(
+            @EntityIdField(generate = @GenerateID(generate = true, generator = "friendly")) String id, String title) {}
 
     @EntityTypeClass(BlogEntry.class)
     public static interface BlogEntryRepository extends CRUDRepository<BlogEntry, String> {}
@@ -38,6 +39,19 @@ public class CRUDRepositoryTest {
     public void testCreateNewInstance() {
         this.repository.save(new BlogEntry("first", "My first entry"));
         var findOneResult = this.repository.findOne("first").orElseThrow();
+        assertEquals("My first entry", findOneResult.title());
+        var findAllResult = this.repository.findAll();
+        assertEquals(1, findAllResult.size());
+
+        this.repository.remove("first");
+        assertFalse(this.repository.findOne("first").isPresent());
+    }
+
+    @Test
+    public void testCreateNewInstanceWithoutID() {
+        var id = this.repository.save(new BlogEntry(null, "My first entry"));
+        assertNotNull(id);
+        var findOneResult = this.repository.findOne(id).orElseThrow();
         assertEquals("My first entry", findOneResult.title());
         var findAllResult = this.repository.findAll();
         assertEquals(1, findAllResult.size());

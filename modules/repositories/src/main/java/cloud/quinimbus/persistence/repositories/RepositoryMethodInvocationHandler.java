@@ -26,6 +26,9 @@ public abstract class RepositoryMethodInvocationHandler {
     private final Class<?> entityClass;
 
     @Getter(AccessLevel.PROTECTED)
+    private final Class<?> idClass;
+
+    @Getter(AccessLevel.PROTECTED)
     private final Schema schema;
 
     @Getter(AccessLevel.PROTECTED)
@@ -45,14 +48,15 @@ public abstract class RepositoryMethodInvocationHandler {
         this.iface = iface;
         this.method = method;
         this.persistenceContext = persistenceContext;
-        this.entityClass = ThrowingOptional.ofNullable(
+        var entityTypeClassAnno = ThrowingOptional.ofNullable(
                         this.method.getAnnotation(EntityTypeClass.class), InvalidRepositoryDefinitionException.class)
                 .or(() -> ThrowingOptional.ofNullable(
                         this.iface.getAnnotation(EntityTypeClass.class), InvalidRepositoryDefinitionException.class))
                 .orElseThrow(() -> new InvalidRepositoryDefinitionException(
-                        "Missing @EntityTypeClass annotation on method %s in class %s"
-                                .formatted(this.method.toString(), this.iface.getName())))
-                .value();
+                        "Missing @EntityTypeClass annotation on method %s in interface %s or on the interface"
+                                .formatted(this.method.toString(), this.iface.getName())));
+        this.entityClass = entityTypeClassAnno.value();
+        this.idClass = entityTypeClassAnno.idClass();
         var entityAnno = this.entityClass.getAnnotation(cloud.quinimbus.persistence.api.annotation.Entity.class);
         this.schema = this.persistenceContext
                 .getSchema(entityAnno.schema().id())

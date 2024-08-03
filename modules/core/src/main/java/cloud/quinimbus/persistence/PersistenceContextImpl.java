@@ -9,6 +9,7 @@ import cloud.quinimbus.persistence.api.entity.EmbeddedPropertyHandler;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationException;
 import cloud.quinimbus.persistence.api.entity.EntityWriterInitialisationException;
+import cloud.quinimbus.persistence.api.entity.IDGenerator;
 import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
 import cloud.quinimbus.persistence.api.lifecycle.LifecycleEvent;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
@@ -76,12 +77,18 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     private final Map<String, List<EmbeddedPropertyHandler>> embeddedPropertyHandlers;
 
+    private final Map<String, IDGenerator> idGenerators;
+
+    private final Map<EntityType, IDGenerator> idGeneratorsPerType;
+
     public PersistenceContextImpl() {
         this.schemas = new LinkedHashMap<>();
         this.schemaStorages = new LinkedHashMap<>();
         this.schemaProviders = new LinkedHashMap<>();
         this.schemaStorageProviders = new LinkedHashMap<>();
         this.embeddedPropertyHandlers = new LinkedHashMap<>();
+        this.idGenerators = new LinkedHashMap<>();
+        this.idGeneratorsPerType = new LinkedHashMap<>();
         ServiceLoader.load(PersistenceSchemaProvider.class).forEach(sp -> {
             var providerAnno = sp.getClass().getAnnotation(Provider.class);
             if (providerAnno == null) {
@@ -100,6 +107,16 @@ public class PersistenceContextImpl implements PersistenceContext {
             }
             for (String a : providerAnno.alias()) {
                 this.schemaStorageProviders.put(a, ssp);
+            }
+        });
+        ServiceLoader.load(IDGenerator.class).forEach(idg -> {
+            var providerAnno = idg.getClass().getAnnotation(Provider.class);
+            if (providerAnno == null) {
+                throw new IllegalStateException("ID generator %s is missing the @Provider annotation"
+                        .formatted(idg.getClass().getName()));
+            }
+            for (String a : providerAnno.alias()) {
+                this.idGenerators.put(a, idg);
             }
         });
     }
@@ -144,6 +161,9 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     @Override
     public <K> Entity<K> newEntity(K id, EntityType type) {
+        if (id == null) {
+            id = (K) this.generateID(type).orElseThrow(() -> new IllegalArgumentException("entity id may not be null"));
+        }
         return new DefaultEntity<>(id, type);
     }
 
@@ -156,6 +176,9 @@ public class PersistenceContextImpl implements PersistenceContext {
     @Override
     public <K> Entity<K> newEntity(K id, EntityType type, Map<String, Object> properties, Map<String, Object> transientFields)
             throws UnparseableValueException {
+        if (id == null) {
+            id = (K) this.generateID(type).orElseThrow(() -> new IllegalArgumentException("Entity id may not be null and no generator is set for the type %s".formatted(type.id())));
+        }
         var typeProperties = type.properties().stream().collect(Collectors.toMap(pt -> pt.name(), pt -> pt));
         Map<String, Object> parsedProperties = ThrowingStream.of(
                         properties.entrySet().stream(), UnparseableValueException.class)
@@ -213,10 +236,18 @@ public class PersistenceContextImpl implements PersistenceContext {
                         .orElseThrow(() -> new InvalidSchemaException("Cannot find the record schema provider")));
     }
 
-    private Schema importSchema(Schema schema) {
+    private Schema importSchema(Schema schema) throws InvalidSchemaException {
         schemas.put(schema.id(), schema);
         var handlers = schema.entityTypes().values().stream().flatMap(t -> this.importEmbeddableSchemaHandlers(schema.id(), t)).toList();
         this.embeddedPropertyHandlers.put(schema.id(), handlers);
+        ThrowingStream.of(schema.entityTypes().values().stream(), InvalidSchemaException.class).filter(e -> e.idGenerator().isPresent()).forEach(e -> {
+            var generator = this.idGenerators.get(e.idGenerator().get());
+            if (generator != null) {
+                this.idGeneratorsPerType.put(e, generator);
+            } else {
+                throw new InvalidSchemaException("ID generator %s not found".formatted(e.idGenerator().get()));
+            }
+        });
         return schema;
     }
 
@@ -253,7 +284,7 @@ public class PersistenceContextImpl implements PersistenceContext {
         if (!recordClass.isRecord()) {
             throw new IllegalArgumentException("Type %s is no record".formatted(recordClass.getName()));
         }
-        return new RecordEntityReader(type, recordClass);
+        return new RecordEntityReader(this, type, recordClass);
     }
 
     @Override
@@ -364,6 +395,13 @@ public class PersistenceContextImpl implements PersistenceContext {
                 return Optional.of((T) delegate);
             }
             return getStorageDelegate(delegate.getDelegate(), delegateType);
+        }
+        return Optional.empty();
+    }
+
+    private <K> Optional<K> generateID(EntityType type) {
+        if (this.idGeneratorsPerType.containsKey(type)) {
+            return Optional.of((K) this.idGeneratorsPerType.get(type).generate());
         }
         return Optional.empty();
     }

@@ -6,6 +6,7 @@ import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.StructuredObjectEntry;
 import cloud.quinimbus.persistence.api.schema.EntityType;
+import cloud.quinimbus.persistence.api.schema.EntityTypeBuilder;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.EntityTypePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
@@ -58,18 +59,16 @@ public class DefaultEntityTest {
                 Set.of(new EntityTypeProperty("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE)),
                 Set.of(),
                 null);
-        var type = new EntityType(
-                "testEntity",
-                Optional.empty(),
-                Set.of(
-                        new EntityTypeProperty<>(
-                                "string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE),
-                        new EntityTypeProperty<>(
-                                "stringlist", new StringPropertyType(), EntityTypeProperty.Structure.LIST),
-                        new EntityTypeProperty<>(
-                                "number", new IntegerPropertyType(), EntityTypeProperty.Structure.SINGLE),
-                        new EntityTypeProperty<>("embedded", embeddedType, EntityTypeProperty.Structure.SINGLE)),
-                Set.of());
+        var type = EntityTypeBuilder.builder()
+                .id("testEntity")
+                .addProperties(new EntityTypeProperty<>(
+                        "string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE))
+                .addProperties(new EntityTypeProperty<>(
+                        "stringlist", new StringPropertyType(), EntityTypeProperty.Structure.LIST))
+                .addProperties(new EntityTypeProperty<>(
+                        "number", new IntegerPropertyType(), EntityTypeProperty.Structure.SINGLE))
+                .addProperties(new EntityTypeProperty<>("embedded", embeddedType, EntityTypeProperty.Structure.SINGLE))
+                .build();
         var properties = Map.<String, Object>of(
                 "string",
                 "Hello World",

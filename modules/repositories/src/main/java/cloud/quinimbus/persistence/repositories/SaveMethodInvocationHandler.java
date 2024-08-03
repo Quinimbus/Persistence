@@ -17,8 +17,10 @@ public class SaveMethodInvocationHandler extends RepositoryMethodInvocationHandl
         if (m.getParameterCount() != 1) {
             throw new InvalidRepositoryDefinitionException("The save method should only have one parameter");
         }
-        if (!void.class.equals(m.getReturnType())) {
-            throw new InvalidRepositoryDefinitionException("The save method has to be void");
+        var gm = new GenericMethod(iface, m);
+        if (!this.getIdClass().equals(gm.getActualReturnType())) {
+            throw new InvalidRepositoryDefinitionException("The save method has to return the id type, but returns %s"
+                    .formatted(gm.getActualReturnType().getSimpleName()));
         }
         var parameterType = new GenericMethod(iface, m).getActualParameterType(0);
         if (parameterType.equals(Entity.class)) {
@@ -43,6 +45,6 @@ public class SaveMethodInvocationHandler extends RepositoryMethodInvocationHandl
         var entityRecord = args[0];
         var entity = this.entityReader.read(entityRecord);
         this.getSchemaStorage().save(entity);
-        return null;
+        return entity.getId();
     }
 }

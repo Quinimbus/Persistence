@@ -1,11 +1,12 @@
 package cloud.quinimbus.persistence.entity.reader;
 
+import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.EntityReader;
 import cloud.quinimbus.persistence.api.entity.EntityReaderInitialisationException;
+import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
 import cloud.quinimbus.persistence.api.schema.EntityType;
-import cloud.quinimbus.persistence.entity.DefaultEntity;
 import cloud.quinimbus.persistence.exception.EntityReaderReadException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -16,8 +17,12 @@ public class RecordEntityReader<T extends Record> extends AbstractRecordReader i
 
     private final Method idFieldGetter;
 
-    public RecordEntityReader(EntityType type, Class<T> recordClass) throws EntityReaderInitialisationException {
+    private final PersistenceContext persistenceContext;
+
+    public RecordEntityReader(PersistenceContext persistenceContext, EntityType type, Class<T> recordClass)
+            throws EntityReaderInitialisationException {
         super(type, type.properties(), recordClass);
+        this.persistenceContext = persistenceContext;
         var possibleIdFields = Arrays.stream(recordClass.getDeclaredFields())
                 .filter(f -> f.getAnnotation(EntityIdField.class) != null)
                 .toList();
@@ -39,9 +44,11 @@ public class RecordEntityReader<T extends Record> extends AbstractRecordReader i
         }
     }
 
-    public RecordEntityReader(EntityType type, Class<T> recordClass, String idField)
+    public RecordEntityReader(
+            PersistenceContext persistenceContext, EntityType type, Class<T> recordClass, String idField)
             throws EntityReaderInitialisationException {
         super(type, type.properties(), recordClass);
+        this.persistenceContext = persistenceContext;
         try {
             this.type = type;
             this.idFieldGetter = recordClass.getMethod(idField);
@@ -61,8 +68,9 @@ public class RecordEntityReader<T extends Record> extends AbstractRecordReader i
     @Override
     public <K> Entity<K> read(T source) {
         try {
-            return new DefaultEntity<>((K) this.idFieldGetter.invoke(source), this.type, this.getProperties(source));
-        } catch (ReflectiveOperationException | IllegalArgumentException ex) {
+            return this.persistenceContext.newEntity(
+                    (K) this.idFieldGetter.invoke(source), type, this.getProperties(source));
+        } catch (ReflectiveOperationException | IllegalArgumentException | UnparseableValueException ex) {
             throw new EntityReaderReadException("Error reading the source object %s".formatted(source.toString()), ex);
         }
     }

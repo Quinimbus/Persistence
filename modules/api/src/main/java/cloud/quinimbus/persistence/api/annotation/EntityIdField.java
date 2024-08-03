@@ -7,4 +7,6 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EntityIdField {}
+public @interface EntityIdField {
+    GenerateID generate() default @GenerateID();
+}

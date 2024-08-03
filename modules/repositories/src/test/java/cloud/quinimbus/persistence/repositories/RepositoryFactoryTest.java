@@ -25,7 +25,7 @@ public class RepositoryFactoryTest {
 
         List<BlogEntry> findAll();
 
-        void save(BlogEntry entry);
+        String save(BlogEntry entry);
 
         void remove(String id);
     }

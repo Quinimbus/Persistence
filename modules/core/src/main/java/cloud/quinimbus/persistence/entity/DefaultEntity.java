@@ -25,24 +25,34 @@ public class DefaultEntity<K> extends AbstractDefaultStructuredObject<EntityType
         super(new LinkedHashMap<>());
         this.id = id;
         this.type = type;
+        this.validate();
     }
 
     public DefaultEntity(K id, EntityType type, Map<String, Object> properties) {
         super(new LinkedHashMap<>(properties));
         this.id = id;
         this.type = type;
+        this.validate();
     }
 
     public DefaultEntity(K id, EntityType type, Map<String, Object> properties, Map<String, Object> transientFields) {
         super(new LinkedHashMap<>(properties), new LinkedHashMap<>(transientFields));
         this.id = id;
         this.type = type;
+        this.validate();
     }
 
     public DefaultEntity(Entity<K> entity) {
         super(new LinkedHashMap<>(entity.getProperties()));
         this.id = entity.getId();
         this.type = entity.getType();
+        this.validate();
+    }
+
+    private void validate() {
+        if (this.id == null) {
+            throw new IllegalArgumentException("Entity id may not be null");
+        }
     }
 
     @Override

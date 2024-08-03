@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface CRUDRepository<T, K> {
 
-    void save(T entity);
+    K save(T entity);
 
     Optional<T> findOne(K id);
 

@@ -10,4 +10,6 @@ import java.lang.annotation.Target;
 public @interface EntityTypeClass {
 
     Class<?> value();
+
+    Class<?> idClass() default String.class;
 }
