@@ -50,8 +50,8 @@ public class LifecyclePersistenceSchemaStorageDelegate extends PersistenceSchema
     public <K> void save(Entity<K> entity) throws PersistenceException {
         var preSaveResult = this.callPreSaveEventConsumerRounds(entity);
         super.save(preSaveResult.mutatedEntity());
-        this.callPostSaveEventConsumers(
-                new DefaultEntity<>(preSaveResult.mutatedEntity()), preSaveResult.mutatedProperties());
+        var loadedEntity = super.find(entity.getType(), entity.getId()).orElseThrow();
+        this.callPostSaveEventConsumers(new DefaultEntity<>(loadedEntity), preSaveResult.mutatedProperties());
     }
 
     @Override
