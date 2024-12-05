@@ -38,6 +38,10 @@ public class EmbeddedRecordReader<T extends Record> extends AbstractRecordReader
         if (o instanceof Record r) {
             return this.readRecord((T) r);
         }
-        throw new IllegalArgumentException();
+        if (o == null) {
+            return null;
+        }
+        throw new IllegalArgumentException("Cannot read an object of type %s as embedded record"
+                .formatted(o.getClass().getName()));
     }
 }
