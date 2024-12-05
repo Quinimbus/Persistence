@@ -1,11 +1,12 @@
 package cloud.quinimbus.persistence.test.base;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
 import cloud.quinimbus.persistence.api.lifecycle.EntityPreSaveEvent;
+import cloud.quinimbus.persistence.api.lifecycle.diff.CompletePropertyDiff;
+import cloud.quinimbus.persistence.api.lifecycle.diff.ListPropertyEntryAddedDiff;
+import cloud.quinimbus.persistence.api.lifecycle.diff.ListPropertyEntryRemovedDiff;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import cloud.quinimbus.persistence.common.filter.FilterFactory;
@@ -19,10 +20,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -254,11 +256,8 @@ public abstract class AbstractStorageProviderTest {
         });
         this.persistenceContext.onLifecycleEvent(schema.id(), EntityPreSaveEvent.class, entryType, e -> {
             var entity = e.entity();
-            System.out.println("[pre-save] " + e.mutatedProperties());
-            var justUpdatecountMutated =
-                    e.mutatedProperties().size() == 1 && e.mutatedProperties().equals(Set.of("updatecount"));
+            var justUpdatecountMutated = e.onlyPropertyMutated("updatecount");
             if (!justUpdatecountMutated) {
-                System.out.println("[pre-save] setting updatecount...");
                 Integer updatecount = (Integer) entity.getProperty("updatecount");
                 entity.setProperty("updatecount", updatecount == null ? 1 : updatecount + 1);
                 e.changedEntity().accept(entity);
@@ -275,5 +274,42 @@ public abstract class AbstractStorageProviderTest {
         var loadedEntry = storage.find(entryType, "first").orElseThrow();
         assertNotNull(loadedEntry.getProperty("created"));
         assertEquals(2, (Number) loadedEntry.getProperty("updatecount"));
+    }
+
+    @Test
+    public void testListLifecycleEvents() throws IOException, PersistenceException, InvalidSchemaException {
+        var schema = this.persistenceContext.importSchemaFromSingleJson(new InputStreamReader(
+                AbstractStorageProviderTest.class.getResourceAsStream("AbstractStorageProviderTest_schema.json"),
+                Charset.forName("UTF-8")));
+        var params = new LinkedHashMap<>(this.getParams());
+        params.put("schema", schema.id());
+        var storage = this.persistenceContext.setSchemaStorage(
+                schema.id(), this.getStorageProvider().createSchema(this.persistenceContext, params));
+        var entryType = schema.entityTypes().get("entry");
+        var firstEntry = this.persistenceContext.newEntity("first", entryType);
+        firstEntry.setProperty("title", "My first entry");
+        firstEntry.setProperty("published", true);
+        firstEntry.setProperty("publishDate", LocalDate.now());
+        firstEntry.setProperty("category", "POLITICS");
+        firstEntry.setProperty("readcount", 15);
+        firstEntry.setProperty("tags", List.of("election", "politics", "a"));
+        storage.save(firstEntry);
+        AtomicBoolean listChanged = new AtomicBoolean(false);
+        AtomicBoolean addedToListChanged = new AtomicBoolean(false);
+        AtomicBoolean removedFromListChanged = new AtomicBoolean(false);
+        this.persistenceContext.onLifecycleEvent(schema.id(), EntityPreSaveEvent.class, entryType, e -> {
+            if (e.streamDiffsForProperty("tags", List.class).anyMatch(p -> p instanceof CompletePropertyDiff)) {
+                listChanged.set(true);
+            }
+            if (e.streamDiffsForProperty("tags", List.class).anyMatch(p -> p instanceof ListPropertyEntryAddedDiff)) {
+                addedToListChanged.set(true);
+            }
+            if (e.streamDiffsForProperty("tags", List.class).anyMatch(p -> p instanceof ListPropertyEntryRemovedDiff)) {
+                removedFromListChanged.set(true);
+            }
+        });
+        firstEntry.setProperty("tags", List.of("politics", "election", "b"));
+        storage.save(firstEntry);
+        assertTrue(listChanged.get());
     }
 }

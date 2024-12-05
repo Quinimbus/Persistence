@@ -98,9 +98,9 @@ public interface PersistenceContext {
 
     RecordEntityRegistry getRecordEntityRegistry();
 
-    <T extends LifecycleEvent> void onLifecycleEvent(
+    <T extends LifecycleEvent<K>, K> void onLifecycleEvent(
             String schema, Class<T> eventType, EntityType type, Consumer<T> consumer);
 
-    <T extends LifecycleEvent> void onLifecycleEvent(
+    <T extends LifecycleEvent<K>, K> void onLifecycleEvent(
             String schema, Class<T> eventType, String typeId, Consumer<T> consumer);
 }

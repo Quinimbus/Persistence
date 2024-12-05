@@ -7,10 +7,13 @@ import cloud.quinimbus.persistence.api.lifecycle.EntityPostLoadEvent;
 import cloud.quinimbus.persistence.api.lifecycle.EntityPostSaveEvent;
 import cloud.quinimbus.persistence.api.lifecycle.EntityPreSaveEvent;
 import cloud.quinimbus.persistence.api.lifecycle.LifecycleEvent;
+import cloud.quinimbus.persistence.api.lifecycle.diff.CompletePropertyDiff;
+import cloud.quinimbus.persistence.api.lifecycle.diff.Diff;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorage;
 import cloud.quinimbus.persistence.common.storage.PersistenceSchemaStorageDelegate;
 import cloud.quinimbus.persistence.entity.DefaultEntity;
+import cloud.quinimbus.persistence.lifecycle.diff.EntityComparator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,14 +47,14 @@ public class LifecyclePersistenceSchemaStorageDelegate extends PersistenceSchema
         consumersList.add(consumer);
     }
 
-    private record PreSaveResult<K>(Entity<K> mutatedEntity, Set<String> mutatedProperties) {}
+    private record PreSaveResult<K>(Entity<K> mutatedEntity, Set<Diff<Object>> diffs) {}
 
     @Override
     public <K> void save(Entity<K> entity) throws PersistenceException {
         var preSaveResult = this.callPreSaveEventConsumerRounds(entity);
         super.save(preSaveResult.mutatedEntity());
         var loadedEntity = super.find(entity.getType(), entity.getId()).orElseThrow();
-        this.callPostSaveEventConsumers(new DefaultEntity<>(loadedEntity), preSaveResult.mutatedProperties());
+        this.callPostSaveEventConsumers(new DefaultEntity<>(loadedEntity), preSaveResult.diffs());
     }
 
     @Override
@@ -70,87 +73,70 @@ public class LifecyclePersistenceSchemaStorageDelegate extends PersistenceSchema
         return super.<K>findFiltered(type, propertyFilters).map(this::callPostLoadEventConsumers);
     }
 
-    private <K> Set<String> compareEntities(Entity<K> newEntity, Entity<K> oldEntity) {
-        var allPropertyKeys = new HashSet<String>();
-        allPropertyKeys.addAll(newEntity.getProperties().keySet());
-        allPropertyKeys.addAll(oldEntity.getProperties().keySet());
-        return allPropertyKeys.stream()
-                .filter(key -> {
-                    var oldValue = oldEntity.getProperty(key);
-                    var newValue = newEntity.getProperty(key);
-                    if ((oldValue == null && newValue != null) || (oldValue != null && newValue == null)) {
-                        return true;
-                    } else if (oldValue == null && newValue == null) {
-                        return false;
-                    } else {
-                        return !oldValue.equals(newValue);
-                    }
-                })
-                .collect(Collectors.toSet());
-    }
-
     private <K> PreSaveResult<K> callPreSaveEventConsumerRounds(Entity<K> entity) throws PersistenceException {
-        Set<String> mutatedProperties = new HashSet<>();
+        Set<Diff<Object>> diffs = new HashSet<>();
         super.find(entity.getType(), entity.getId())
                 .ifPresentOrElse(
                         oldEntity -> {
-                            mutatedProperties.addAll(compareEntities(entity, oldEntity));
+                            diffs.addAll(EntityComparator.compareEntities(entity, oldEntity));
                         },
                         () -> {
-                            mutatedProperties.addAll(entity.getProperties().keySet());
+                            diffs.addAll(entity.getProperties().entrySet().stream()
+                                    .map(e -> new CompletePropertyDiff<>(e.getKey(), null, e.getValue()))
+                                    .collect(Collectors.toSet()));
                         });
         int preSaveRoundCount = 0;
         var entityOfLastRound = entity;
-        var mutatedPropertiesInLastRound = mutatedProperties;
+        var mutatedPropertiesInLastRound = diffs;
         while (!mutatedPropertiesInLastRound.isEmpty()) {
             var preSaveResult = this.callPreSaveEventConsumers(
                     new DefaultEntity<>(entityOfLastRound), mutatedPropertiesInLastRound);
             entityOfLastRound = preSaveResult.mutatedEntity();
-            mutatedPropertiesInLastRound = preSaveResult.mutatedProperties();
-            mutatedProperties.addAll(mutatedPropertiesInLastRound);
+            mutatedPropertiesInLastRound = preSaveResult.diffs();
+            diffs.addAll(mutatedPropertiesInLastRound);
             preSaveRoundCount++;
             if (preSaveRoundCount > 100) {
                 throw new IllegalStateException(
                         "There seems to be an endless recursion in your pre-save event handlers");
             }
         }
-        return new PreSaveResult<>(entityOfLastRound, mutatedProperties);
+        return new PreSaveResult<>(entityOfLastRound, diffs);
     }
 
-    private <K> PreSaveResult<K> callPreSaveEventConsumers(Entity<K> entity, Set<String> mutatedProperties) {
+    private <K> PreSaveResult<K> callPreSaveEventConsumers(Entity<K> entity, Set<Diff<Object>> diffs) {
         return Optional.ofNullable(this.consumers.get(EntityPreSaveEvent.class))
                 .map(m -> m.get(entity.getType().id()))
                 .map(cl -> cl.stream()
                         .map(c -> (Consumer<EntityPreSaveEvent<K>>) c)
-                        .map(c -> this.callPreSaveEventConsumer(entity, mutatedProperties, c))
+                        .map(c -> this.callPreSaveEventConsumer(entity, diffs, c))
                         .collect(Collectors.reducing(
                                 new PreSaveResult<>(entity, Set.of()), this::combinePreSaveResults)))
                 .orElseGet(() -> new PreSaveResult<>(entity, Set.of()));
     }
 
     private <K> PreSaveResult<K> callPreSaveEventConsumer(
-            Entity<K> entity, Set<String> mutatedProperties, Consumer<EntityPreSaveEvent<K>> consumer) {
+            Entity<K> entity, Set<Diff<Object>> diffs, Consumer<EntityPreSaveEvent<K>> consumer) {
         var mutatedEntity = new AtomicReference<>(entity);
-        consumer.accept(new EntityPreSaveEvent<>(new DefaultEntity<>(entity), mutatedProperties, mutatedEntity::set));
-        return new PreSaveResult<>(mutatedEntity.get(), this.compareEntities(mutatedEntity.get(), entity));
+        consumer.accept(new EntityPreSaveEvent<>(new DefaultEntity<>(entity), diffs, mutatedEntity::set));
+        return new PreSaveResult<>(mutatedEntity.get(), EntityComparator.compareEntities(mutatedEntity.get(), entity));
     }
 
     private <K> PreSaveResult<K> combinePreSaveResults(PreSaveResult<K> res1, PreSaveResult<K> res2) {
-        var intersection = SetUtils.intersection(res1.mutatedProperties(), res2.mutatedProperties());
+        var intersection = SetUtils.intersection(res1.diffs(), res2.diffs());
         if (!intersection.isEmpty()) {
             throw new IllegalStateException(
                     "Two event handlers have changed the same field or multiple fields (%s) in the same round"
-                            .formatted(intersection.stream().collect(Collectors.joining(", "))));
+                            .formatted(intersection.stream().map(Diff::name).collect(Collectors.joining(", "))));
         }
         var result = new DefaultEntity<>(res1.mutatedEntity());
-        for (String prop : res2.mutatedProperties()) {
-            result.setProperty(prop, res2.mutatedEntity().getProperty(prop));
+        for (var diff : res2.diffs()) {
+            result.setProperty(diff.name(), diff.newValue());
         }
-        return new PreSaveResult<>(result, SetUtils.union(res1.mutatedProperties(), res2.mutatedProperties()));
+        return new PreSaveResult<>(result, SetUtils.union(res1.diffs(), res2.diffs()));
     }
 
-    private <K> void callPostSaveEventConsumers(Entity<K> entity, Set<String> mutatedProperties) {
-        var postSaveEvent = new EntityPostSaveEvent<K>(entity, mutatedProperties);
+    private <K> void callPostSaveEventConsumers(Entity<K> entity, Set<Diff<Object>> diffs) {
+        var postSaveEvent = new EntityPostSaveEvent<K>(entity, diffs);
         Optional.ofNullable(this.consumers.get(EntityPostSaveEvent.class))
                 .map(m -> m.get(entity.getType().id()))
                 .ifPresent(cl -> {

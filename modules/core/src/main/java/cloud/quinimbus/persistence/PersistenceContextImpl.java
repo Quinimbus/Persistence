@@ -372,13 +372,13 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
-    public <T extends LifecycleEvent> void onLifecycleEvent(
+    public <T extends LifecycleEvent<K>, K> void onLifecycleEvent(
             String schema, Class<T> eventType, EntityType type, Consumer<T> consumer) {
         this.onLifecycleEvent(schema, eventType, type.id(), consumer);
     }
 
     @Override
-    public <T extends LifecycleEvent> void onLifecycleEvent(
+    public <T extends LifecycleEvent<K>, K> void onLifecycleEvent(
             String schema, Class<T> eventType, String typeId, Consumer<T> consumer) {
         var storage = this.getSchemaStorage(schema)
                 .orElseThrow(() -> new IllegalArgumentException("Schema storage %s not found".formatted(schema)));
