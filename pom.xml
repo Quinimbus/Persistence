@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>cloud.quinimbus</groupId>
     <artifactId>persistence</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1.0</version>
     <name>QuiNimbus Persistence Parent</name>
     <packaging>pom</packaging>
     
@@ -29,7 +29,7 @@
             <dependency>
                 <groupId>cloud.quinimbus</groupId>
                 <artifactId>bom</artifactId>
-                <version>0.1-SNAPSHOT</version>
+                <version>0.1.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
