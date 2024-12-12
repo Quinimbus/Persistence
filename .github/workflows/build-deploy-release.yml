@@ -1,6 +1,12 @@
-name: build-deploy
+name: build-deploy-release
 
-on: [push]
+on:
+  push:
+    tags:
+      - '\d+.\d+.\d+'
+
+permissions:
+    contents: write
 
 jobs:
   build:
@@ -23,24 +29,25 @@ jobs:
         id: project
         run: echo version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) >> $GITHUB_OUTPUT
       - name: Build with Maven
-        if:  ${{ endsWith(steps.project.outputs.version, '-SNAPSHOT') }}
-        run: mvn --batch-mode --update-snapshots verify site
+        if:  ${{ !endsWith(steps.project.outputs.version, '-SNAPSHOT') }}
+        run: mvn --batch-mode -Prelease verify
       - name: Deploy package to repository
-        if:  ${{ endsWith(steps.project.outputs.version, '-SNAPSHOT') }}
+        if:  ${{ !endsWith(steps.project.outputs.version, '-SNAPSHOT') }}
         env:
           REPOUSER: ${{ secrets.repouser }}
           REPOPASS: ${{ secrets.repopass }}
         run: |
           mkdir -p ~/.m2
           echo "<settings><servers><server><id>quinimbus-snapshots</id><username>\${env.REPOUSER}</username><password>\${env.REPOPASS}</password></server><server><id>quinimbus-releases</id><username>\${env.REPOUSER}</username><password>\${env.REPOPASS}</password></server></servers></settings>" > ~/.m2/settings.xml
-          mvn -DskipTests deploy
-      - name: Deploy apidocs
-        if:  ${{ endsWith(steps.project.outputs.version, '-SNAPSHOT') }}
-        uses: balta3/action-upload-webdav@main
+          mvn -DskipTests -Prelease deploy
+      - name: Create Release
+        if:  ${{ !endsWith(steps.project.outputs.version, '-SNAPSHOT') }}
+        uses: softprops/action-gh-release@v2
         with:
-          webdav_address: https://apidocs-dav.quinimbus.cloud
-          webdav_username: ${{secrets.apidocs_dav_user}}
-          webdav_password: ${{secrets.apidocs_dav_pass}}
-          webdav_upload_path: "/Persistence/SNAPSHOT/"
-          files: "./target/site/apidocs/**"
-          files_base: "./target/site/apidocs/"
+          files: |
+            modules/api/target/*.jar
+            modules/cdi/target/*.jar
+            modules/common/target/*.jar
+            modules/core/target/*.jar
+            modules/mongo/target/*.jar
+            modules/repositories/target/*.jar
