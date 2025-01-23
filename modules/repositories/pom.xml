@@ -39,7 +39,6 @@
         <dependency>
             <groupId>cloud.quinimbus</groupId>
             <artifactId>tools</artifactId>
-            <version>0.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -57,7 +56,6 @@
         <dependency>
             <groupId>cloud.quinimbus</groupId>
             <artifactId>persistence-core</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
