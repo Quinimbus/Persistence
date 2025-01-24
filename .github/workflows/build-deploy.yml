@@ -17,11 +17,11 @@ jobs:
           mongodb-username: mongoroot
           mongodb-password: mongorootpassword
       - uses: actions/checkout@v4
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'adopt'
+          distribution: temurin
+          java-version-file: .java-version
       - name: Extract Project version
         id: project
         run: echo version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) >> $GITHUB_OUTPUT
