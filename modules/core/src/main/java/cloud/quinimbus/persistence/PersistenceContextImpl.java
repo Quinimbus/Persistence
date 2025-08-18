@@ -183,8 +183,9 @@ public class PersistenceContextImpl implements PersistenceContext {
         Map<String, Object> parsedProperties = ThrowingStream.of(
                         properties.entrySet().stream(), UnparseableValueException.class)
                 .filter(e -> typeProperties.containsKey(e.getKey()))
-                .map(e -> Map.entry(e.getKey(), this.parse(type, List.of(), typeProperties.get(e.getKey()), e)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .map(e -> Map.entry(e.getKey(), Optional.ofNullable(this.parse(type, List.of(), typeProperties.get(e.getKey()), e))))
+                .filter(e -> e.getValue().isPresent())
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get()));
         return new DefaultEntity<>(id, type, parsedProperties, transientFields);
     }
 
@@ -203,8 +204,9 @@ public class PersistenceContextImpl implements PersistenceContext {
         Map<String, Object> parsedProperties = ThrowingStream.of(
                         properties.entrySet().stream(), UnparseableValueException.class)
                 .filter(e -> typeProperties.containsKey(e.getKey()))
-                .map(e -> Map.entry(e.getKey(), this.parse(parentType, path, typeProperties.get(e.getKey()), e)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .map(e -> Map.entry(e.getKey(), Optional.ofNullable(this.parse(parentType, path, typeProperties.get(e.getKey()), e))))
+                .filter(e -> e.getValue().isPresent())
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get()));
         return new DefaultEmbeddedObject(path.toArray(new String[] {}), parentType, parsedProperties, transientFields, type);
     }
 
