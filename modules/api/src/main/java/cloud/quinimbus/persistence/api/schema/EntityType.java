@@ -9,7 +9,7 @@ import java.util.Set;
 @RecordBuilder.Options(
         useImmutableCollections = true,
         addSingleItemCollectionBuilders = true,
-        addConcreteSettersForOptional = true)
+        addConcreteSettersForOptional = RecordBuilder.ConcreteSettersForOptionalMode.ENABLED)
 public record EntityType(
         String id,
         Optional<String> idGenerator,
