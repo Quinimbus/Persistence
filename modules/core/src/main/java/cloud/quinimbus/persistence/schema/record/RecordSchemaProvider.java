@@ -10,6 +10,7 @@ import cloud.quinimbus.persistence.api.annotation.EntityField;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
 import cloud.quinimbus.persistence.api.annotation.EntityTransientField;
 import cloud.quinimbus.persistence.api.annotation.FieldAddMigration;
+import cloud.quinimbus.persistence.api.annotation.FieldValueMappingMigration;
 import cloud.quinimbus.persistence.api.annotation.GenerateID;
 import cloud.quinimbus.persistence.api.entity.EmbeddedPropertyHandler;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
@@ -22,6 +23,7 @@ import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.schema.migrations.PropertyAddMigrationType;
+import cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.EnumPropertyType;
@@ -33,6 +35,7 @@ import cloud.quinimbus.persistence.records.RecordEntityRegistryImpl;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import name.falgout.jeffrey.throwing.ThrowingSupplier;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 @Provider(name = "Record classes schema provider", alias = "record", priority = 0)
@@ -136,12 +140,13 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
 
     private static EntityType typeOfRecord(Class<? extends Record> recordClass) throws InvalidSchemaException {
         var id = Records.idFromRecordClass(recordClass);
+        var properties = propertiesOfRecord(recordClass);
         return EntityTypeBuilder.builder()
                 .id(id)
                 .idGenerator(idGenerator(recordClass))
                 .owningEntity(owningEntityTypeOfRecord(recordClass))
-                .properties(propertiesOfRecord(recordClass))
-                .migrations(migrationsOfRecord(id, recordClass))
+                .properties(properties)
+                .migrations(migrationsOfRecord(id, recordClass, properties))
                 .build();
     }
 
@@ -213,13 +218,11 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
                 var handler = embeddableAnno.handler().equals(EmbeddedPropertyHandler.class)
                         ? null
                         : embeddableAnno.handler();
-                return new EmbeddedPropertyType(
-                        ThrowingStream.of(Arrays.stream(cls.getDeclaredFields()), InvalidSchemaException.class)
-                                .filter(f -> f.getAnnotation(EntityTransientField.class) == null)
-                                .map(RecordSchemaProvider::propertyOfField)
-                                .collect(Collectors.toSet()),
-                        migrationsOfRecord(id, cls),
-                        handler);
+                var properties = ThrowingStream.of(Arrays.stream(cls.getDeclaredFields()), InvalidSchemaException.class)
+                        .filter(f -> f.getAnnotation(EntityTransientField.class) == null)
+                        .map(RecordSchemaProvider::propertyOfField)
+                        .collect(Collectors.toSet());
+                return new EmbeddedPropertyType(properties, migrationsOfRecord(id, cls, properties), handler);
             }
         }
         throw new InvalidSchemaException("Cannot map class %s to an entity property type".formatted(cls.getName()));
@@ -251,27 +254,67 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
         }
     }
 
-    private static Set<EntityTypeMigration> migrationsOfRecord(String entityId, Class<?> recordClass)
-            throws InvalidSchemaException {
+    private static Set<EntityTypeMigration> migrationsOfRecord(
+            String entityId, Class<?> recordClass, Set<EntityTypeProperty> properties) throws InvalidSchemaException {
         var propertyBasedMigrations = ThrowingStream.of(
                         Arrays.stream(recordClass.getDeclaredFields()), InvalidSchemaException.class)
-                .map(f -> migrationOfField(entityId, f))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(f -> ThrowingStream.of(
+                        migrationsOfField(
+                                entityId,
+                                f,
+                                () -> properties.stream()
+                                        .filter(p -> p.name().equals(f.getName()))
+                                        .findAny()
+                                        .map(EntityTypeProperty::type)
+                                        .orElseThrow(() -> new InvalidSchemaException(
+                                                "property for %s not found".formatted(f.getName()))))
+                                .stream(),
+                        InvalidSchemaException.class))
                 .collect(Collectors.toSet());
         return propertyBasedMigrations;
     }
 
-    private static Optional<EntityTypeMigration> migrationOfField(String entityId, Field field)
-            throws InvalidSchemaException {
+    private static List<EntityTypeMigration> migrationsOfField(
+            String entityId, Field field, ThrowingSupplier<EntityTypePropertyType, InvalidSchemaException> propertyType) throws InvalidSchemaException {
+        var list = new ArrayList<EntityTypeMigration>();
         var fieldAdd = field.getAnnotation(FieldAddMigration.class);
         if (fieldAdd != null) {
-            return Optional.of(new EntityTypeMigration<>(
+            list.add(new EntityTypeMigration<>(
                     "FieldAdd_%s_%s".formatted(entityId, field.getName()),
                     fieldAdd.version(),
                     new PropertyAddMigrationType(Map.of(field.getName(), fieldAdd.value()))));
         }
-        return Optional.empty();
+        var fieldMapping = field.getAnnotation(FieldValueMappingMigration.class);
+        if (fieldMapping != null) {
+            var migration =
+                    switch (propertyType.get()) {
+                        case EnumPropertyType _ -> mappingMigration(entityId, field, fieldMapping);
+                        case StringPropertyType _ -> mappingMigration(entityId, field, fieldMapping);
+                        case IntegerPropertyType _ -> mappingMigration(entityId, field, fieldMapping);
+                        default -> throw new InvalidSchemaException("Unsupported field type for a mapping migration: %s"
+                                .formatted(propertyType.get().getClass().getSimpleName()));
+                    };
+            list.add(migration);
+        }
+        return list;
+    }
+
+    private static EntityTypeMigration mappingMigration(
+            String entityId, Field field, FieldValueMappingMigration fieldMapping) {
+        return new EntityTypeMigration<>(
+                "FieldValueMapping_%s_%s".formatted(entityId, field.getName()),
+                fieldMapping.version(),
+                new PropertyValueMappingMigrationType(
+                        field.getName(),
+                        Arrays.stream(fieldMapping.value())
+                                .map(
+                                        m -> new cloud.quinimbus.persistence.api.schema.migrations
+                                                .PropertyValueMappingMigrationType.Mapping(
+                                                m.oldValue(),
+                                                m.newValue(),
+                                                PropertyValueMappingMigrationType.Operator.valueOf(
+                                                        m.operator().name())))
+                                .toList(), PropertyValueMappingMigrationType.MissingMappingOperation.valueOf(fieldMapping.ifMissing().name())));
     }
 
     private static Optional<EntityType.OwningEntityTypeRef> owningEntityTypeOfRecord(

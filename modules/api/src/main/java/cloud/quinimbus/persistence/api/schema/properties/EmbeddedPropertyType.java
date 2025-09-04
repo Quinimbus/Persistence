@@ -14,14 +14,8 @@ public record EmbeddedPropertyType(
         Class<? extends EmbeddedPropertyHandler> handlerClass)
         implements EntityTypePropertyType, StructuredObjectType {
 
+    @Override
     public Optional<EntityTypeProperty> property(String name) {
         return this.properties().stream().filter(etp -> etp.name().equals(name)).findAny();
-    }
-
-    public Optional<EmbeddedPropertyType> embeddedPropertyType(String propertyName) {
-        return this.property(propertyName)
-                .map(EntityTypeProperty::type)
-                .filter(EmbeddedPropertyType.class::isInstance)
-                .map(EmbeddedPropertyType.class::cast);
     }
 }
