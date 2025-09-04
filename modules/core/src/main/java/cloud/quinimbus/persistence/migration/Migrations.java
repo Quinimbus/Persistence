@@ -17,6 +17,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.java.Log;
+import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 @Log
 public class Migrations {
@@ -97,9 +98,12 @@ public class Migrations {
         }
         log.fine(() -> "[checkMigrations] checking for migrations in schema %s for version %d entity type %s"
                 .formatted(schema.id(), version, entityType));
-        for (var m : migrations) {
-            checkMigration(storage, schemaMetadata, schema, version, entityType, m);
-        }
+        ThrowingStream.of(
+                        migrations.stream().sorted((me1, me2) -> me1.migration()
+                                .name()
+                                .compareTo(me2.migration().name())),
+                        PersistenceException.class)
+                .forEach(m -> checkMigration(storage, schemaMetadata, schema, version, entityType, m));
     }
 
     private static void checkMigration(
