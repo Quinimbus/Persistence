@@ -36,7 +36,7 @@
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.18.38</version>
+                <version>1.18.40</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -52,7 +52,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.38</version>
+                            <version>1.18.40</version>
                         </path>
                         <path>
                             <groupId>io.soabase.record-builder</groupId>
