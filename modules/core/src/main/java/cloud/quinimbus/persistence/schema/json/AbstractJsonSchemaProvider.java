@@ -79,10 +79,9 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
                 .traverse(codec)
                 .readValuesAs(EntityTypeProperty.class)
                 .next()
-                // var property = mapper.treeToValue(entry.getValue(), EntityTypeProperty.class)
                 .withName(entry.getKey());
         if (property.structure() == null) {
-            property = property.withStructure(EntityTypeProperty.Structure.SINGLE);
+            property = property.withStructure(EntityTypeProperty.DEFAULT_STRUCTURE);
         }
         return property;
     }

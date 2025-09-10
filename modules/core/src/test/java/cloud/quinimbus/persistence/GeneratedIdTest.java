@@ -4,8 +4,6 @@ import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeBuilder;
-import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
-import cloud.quinimbus.persistence.api.schema.EntityTypePropertyBuilder;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.schema.SchemaBuilder;
@@ -27,11 +25,8 @@ public class GeneratedIdTest {
         this.entityType = EntityTypeBuilder.builder()
                 .id("entity")
                 .idGenerator(idGenerator)
-                .addProperties(EntityTypePropertyBuilder.builder()
-                        .name("title")
-                        .type(new StringPropertyType())
-                        .structure(EntityTypeProperty.Structure.SINGLE)
-                        .build())
+                .addProperties(
+                        StringPropertyType.propertyBuilder().name("title").build())
                 .build();
         this.schema = SchemaBuilder.builder()
                 .id("generatedidtest")
@@ -56,7 +51,7 @@ public class GeneratedIdTest {
         var entity = this.persistenceContext.newEntity(null, this.entityType);
         assertNotNull(entity.getId(), "ID should not be null");
         assertTrue(((String) entity.getId()).matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"));
-   }
+    }
 
     @Test
     public void testWithFriendlyIDGenerator() throws PersistenceException, InvalidSchemaException {

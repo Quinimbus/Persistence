@@ -3,6 +3,7 @@ package cloud.quinimbus.persistence.api.schema.properties;
 import cloud.quinimbus.persistence.api.entity.EmbeddedPropertyHandler;
 import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
+import cloud.quinimbus.persistence.api.schema.EntityTypePropertyBuilder;
 import cloud.quinimbus.persistence.api.schema.EntityTypePropertyType;
 import cloud.quinimbus.persistence.api.schema.StructuredObjectType;
 import java.util.Optional;
@@ -13,6 +14,14 @@ public record EmbeddedPropertyType(
         Set<EntityTypeMigration> migrations,
         Class<? extends EmbeddedPropertyHandler> handlerClass)
         implements EntityTypePropertyType, StructuredObjectType {
+
+    public static EntityTypePropertyBuilder<EmbeddedPropertyType> propertyBuilder(
+            Set<EntityTypeProperty> properties,
+            Set<EntityTypeMigration> migrations,
+            Class<? extends EmbeddedPropertyHandler> handlerClass) {
+        return EntityTypePropertyBuilder.<EmbeddedPropertyType>builder()
+                .type(new EmbeddedPropertyType(properties, migrations, handlerClass));
+    }
 
     @Override
     public Optional<EntityTypeProperty> property(String name) {

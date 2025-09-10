@@ -15,8 +15,10 @@ public class EntityComparatorTest {
     @Test
     public void testCompareString() {
         var type = EntityTypeBuilder.builder()
-                .addProperties(new EntityTypeProperty<>(
-                        "string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE))
+                .addProperties(StringPropertyType.propertyBuilder()
+                        .name("string")
+                        .structure(EntityTypeProperty.Structure.SINGLE)
+                        .build())
                 .build();
         var properties1 = Map.<String, Object>of("string", "Hello World");
         var entity1 = new DefaultEntity<>("first", type, properties1);
@@ -29,8 +31,10 @@ public class EntityComparatorTest {
     @Test
     public void testCompareList() {
         var type = EntityTypeBuilder.builder()
-                .addProperties(
-                        new EntityTypeProperty<>("string", new StringPropertyType(), EntityTypeProperty.Structure.LIST))
+                .addProperties(StringPropertyType.propertyBuilder()
+                        .name("string")
+                        .structure(EntityTypeProperty.Structure.LIST)
+                        .build())
                 .build();
         var properties1 = Map.<String, Object>of("string", List.of("one", "two"));
         var entity1 = new DefaultEntity<>("first", type, properties1);
@@ -43,8 +47,10 @@ public class EntityComparatorTest {
     @Test
     public void testCompareSet() {
         var type = EntityTypeBuilder.builder()
-                .addProperties(
-                        new EntityTypeProperty<>("string", new StringPropertyType(), EntityTypeProperty.Structure.SET))
+                .addProperties(StringPropertyType.propertyBuilder()
+                        .name("string")
+                        .structure(EntityTypeProperty.Structure.SET)
+                        .build())
                 .build();
         var properties1 = Map.<String, Object>of("string", Set.of("one", "two"));
         var entity1 = new DefaultEntity<>("first", type, properties1);
@@ -57,8 +63,10 @@ public class EntityComparatorTest {
     @Test
     public void testCompareMap() {
         var type = EntityTypeBuilder.builder()
-                .addProperties(
-                        new EntityTypeProperty<>("string", new StringPropertyType(), EntityTypeProperty.Structure.MAP))
+                .addProperties(StringPropertyType.propertyBuilder()
+                        .name("string")
+                        .structure(EntityTypeProperty.Structure.MAP)
+                        .build())
                 .build();
         var properties1 = Map.<String, Object>of("string", Map.of("a", "one", "b", "two", "c", "three"));
         var entity1 = new DefaultEntity<>("first", type, properties1);

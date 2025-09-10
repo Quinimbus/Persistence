@@ -3,7 +3,6 @@ package cloud.quinimbus.persistence;
 import cloud.quinimbus.persistence.api.schema.EntityTypeBuilder;
 import cloud.quinimbus.persistence.api.schema.EntityTypeMigrationBuilder;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
-import cloud.quinimbus.persistence.api.schema.EntityTypePropertyBuilder;
 import cloud.quinimbus.persistence.api.schema.SchemaBuilder;
 import cloud.quinimbus.persistence.api.schema.migrations.PropertyAddMigrationType;
 import cloud.quinimbus.persistence.api.schema.properties.BooleanPropertyType;
@@ -31,29 +30,20 @@ public class JsonSchemaProviderTest {
                         EntityTypeBuilder.builder()
                                 .id("entry")
                                 .properties(Set.of(
-                                        EntityTypePropertyBuilder.builder()
+                                        StringPropertyType.propertyBuilder()
                                                 .name("title")
-                                                .type(new StringPropertyType())
-                                                .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
-                                        EntityTypePropertyBuilder.builder()
+                                        TimestampPropertyType.propertyBuilder()
                                                 .name("created")
-                                                .type(new TimestampPropertyType())
-                                                .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
-                                        EntityTypePropertyBuilder.builder()
+                                        BooleanPropertyType.propertyBuilder()
                                                 .name("published")
-                                                .type(new BooleanPropertyType())
-                                                .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
-                                        EntityTypePropertyBuilder.builder()
+                                        EnumPropertyType.propertyBuilder(List.of("UNSORTED", "POLITICS", "SPORTS"))
                                                 .name("category")
-                                                .type(new EnumPropertyType(List.of("UNSORTED", "POLITICS", "SPORTS")))
-                                                .structure(EntityTypeProperty.Structure.SINGLE)
                                                 .build(),
-                                        EntityTypePropertyBuilder.builder()
+                                        StringPropertyType.propertyBuilder()
                                                 .name("tags")
-                                                .type(new StringPropertyType())
                                                 .structure(EntityTypeProperty.Structure.LIST)
                                                 .build()))
                                 .migrations(Set.of(EntityTypeMigrationBuilder.builder()

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import cloud.quinimbus.persistence.api.entity.EmbeddedObject;
 import cloud.quinimbus.persistence.api.entity.Entity;
 import cloud.quinimbus.persistence.api.entity.StructuredObjectEntry;
-import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeBuilder;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.EntityTypePropertyType;
@@ -16,7 +15,6 @@ import cloud.quinimbus.persistence.entity.DefaultEmbeddedObject;
 import cloud.quinimbus.persistence.entity.DefaultEntity;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -55,19 +53,25 @@ public class DefaultEntityTest {
     }
 
     private Entity<String> createTestEntity() {
-        var embeddedType = new EmbeddedPropertyType(
-                Set.of(new EntityTypeProperty("string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE)),
-                Set.of(),
-                null);
+        var embeddedProperty = EmbeddedPropertyType.propertyBuilder(
+                        Set.of(StringPropertyType.propertyBuilder()
+                                .name("string")
+                                .build()),
+                        Set.of(),
+                        null)
+                .name("embedded")
+                .build();
         var type = EntityTypeBuilder.builder()
                 .id("testEntity")
-                .addProperties(new EntityTypeProperty<>(
-                        "string", new StringPropertyType(), EntityTypeProperty.Structure.SINGLE))
-                .addProperties(new EntityTypeProperty<>(
-                        "stringlist", new StringPropertyType(), EntityTypeProperty.Structure.LIST))
-                .addProperties(new EntityTypeProperty<>(
-                        "number", new IntegerPropertyType(), EntityTypeProperty.Structure.SINGLE))
-                .addProperties(new EntityTypeProperty<>("embedded", embeddedType, EntityTypeProperty.Structure.SINGLE))
+                .addProperties(
+                        StringPropertyType.propertyBuilder().name("string").build())
+                .addProperties(StringPropertyType.propertyBuilder()
+                        .name("stringlist")
+                        .structure(EntityTypeProperty.Structure.LIST)
+                        .build())
+                .addProperties(
+                        IntegerPropertyType.propertyBuilder().name("number").build())
+                .addProperties(embeddedProperty)
                 .build();
         var properties = Map.<String, Object>of(
                 "string",
@@ -78,7 +82,11 @@ public class DefaultEntityTest {
                 13,
                 "embedded",
                 new DefaultEmbeddedObject(
-                        new String[] {"embedded"}, type, Map.of("string", "embedded"), Map.of(), embeddedType));
+                        new String[] {"embedded"},
+                        type,
+                        Map.of("string", "embedded"),
+                        Map.of(),
+                        embeddedProperty.type()));
         return new DefaultEntity<>("first", type, properties);
     }
 
