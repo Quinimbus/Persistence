@@ -80,6 +80,9 @@ public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaPro
                 .readValuesAs(EntityTypeProperty.class)
                 .next()
                 .withName(entry.getKey());
+        if (property.context() == null) {
+            property = property.withContext(EntityTypeProperty.DEFAULT_CONTEXT);
+        }
         if (property.structure() == null) {
             property = property.withStructure(EntityTypeProperty.DEFAULT_STRUCTURE);
         }

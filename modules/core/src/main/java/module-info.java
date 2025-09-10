@@ -1,6 +1,7 @@
 import cloud.quinimbus.persistence.PersistenceContextImpl;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.entity.IDGenerator;
+import cloud.quinimbus.persistence.api.records.RecordPropertyContextHandler;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
 import cloud.quinimbus.persistence.api.storage.PersistenceStorageProvider;
 import cloud.quinimbus.persistence.entity.FriendlyIDGenerator;
@@ -25,6 +26,7 @@ module cloud.quinimbus.persistence.core {
     uses PersistenceContext;
     uses PersistenceSchemaProvider;
     uses PersistenceStorageProvider;
+    uses RecordPropertyContextHandler;
 
     requires java.logging;
     requires cloud.quinimbus.common.annotations;
