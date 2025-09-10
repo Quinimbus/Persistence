@@ -22,6 +22,11 @@
             <groupId>cloud.quinimbus</groupId>
             <artifactId>config-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>cloud.quinimbus</groupId>
+            <artifactId>common-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
         
         <dependency>
             <groupId>name.falgout.jeffrey</groupId>
