@@ -15,7 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
-@Provider(name = "Single JSON schema provider", alias = "singlefile", priority = 0)
+@Provider(id = "singlefile", name = "Single JSON schema provider", priority = 0)
 public class SingleJsonSchemaProvider extends AbstractJsonSchemaProvider {
 
     public Schema importSchema(Reader reader) throws IOException {

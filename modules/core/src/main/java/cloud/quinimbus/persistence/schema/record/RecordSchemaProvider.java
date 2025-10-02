@@ -2,6 +2,7 @@ package cloud.quinimbus.persistence.schema.record;
 
 import cloud.quinimbus.common.annotations.Provider;
 import cloud.quinimbus.common.annotations.modelling.Owner;
+import cloud.quinimbus.common.tools.ProviderLoader;
 import cloud.quinimbus.common.tools.Records;
 import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.annotation.Embeddable;
@@ -35,12 +36,13 @@ import cloud.quinimbus.persistence.api.schema.properties.LocalDatePropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.api.schema.properties.TimestampPropertyType;
 import cloud.quinimbus.persistence.records.RecordEntityRegistryImpl;
+import cloud.quinimbus.tools.function.LazySingletonSupplier;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.SequencedMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,41 +54,16 @@ import java.util.stream.StreamSupport;
 import name.falgout.jeffrey.throwing.ThrowingSupplier;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
-@Provider(name = "Record classes schema provider", alias = "record", priority = 0)
+@Provider(id = "record", name = "Record classes schema provider", priority = 0)
 public class RecordSchemaProvider implements PersistenceSchemaProvider {
 
     private final RecordEntityRegistryImpl recordEntityRegistry;
-    private final Map<String, RecordPropertyContextHandler> propertyContextHandlers;
+    private final SequencedMap<String, LazySingletonSupplier<RecordPropertyContextHandler>> propertyContextHandlers;
 
     public RecordSchemaProvider() {
         this.recordEntityRegistry = new RecordEntityRegistryImpl();
-        this.propertyContextHandlers = new LinkedHashMap<>();
-        ServiceLoader.load(RecordPropertyContextHandler.class, RecordPropertyContextHandler.class.getClassLoader())
-                .forEach(rpch -> {
-                    var providerAnno = rpch.getClass().getAnnotation(Provider.class);
-                    if (providerAnno == null) {
-                        throw new IllegalStateException(
-                                "RecordPropertyContextHandler %s is missing the @Provider annotation"
-                                        .formatted(rpch.getClass().getName()));
-                    }
-                    if (providerAnno.alias().length > 0) {
-                        throw new IllegalStateException(
-                                "Setting an alias in @Provider is not supported for implementations of RecordPropertyContextHandler, please review %s"
-                                        .formatted(rpch.getClass().getName()));
-                    }
-                    if (this.propertyContextHandlers.containsKey(providerAnno.name())) {
-                        throw new IllegalStateException(
-                                "There are at lease two RecordPropertyContextHandler for the name %s: %s and %s"
-                                        .formatted(
-                                                providerAnno.name(),
-                                                this.propertyContextHandlers
-                                                        .get(providerAnno.name())
-                                                        .getClass()
-                                                        .getName(),
-                                                rpch.getClass().getName()));
-                    }
-                    this.propertyContextHandlers.put(providerAnno.name(), rpch);
-                });
+        this.propertyContextHandlers =
+                ProviderLoader.loadProviders(RecordPropertyContextHandler.class, ServiceLoader::load, false);
     }
 
     public RecordEntityRegistry getRecordEntityRegistry() {
@@ -223,6 +200,7 @@ public class RecordSchemaProvider implements PersistenceSchemaProvider {
     private Map<String, ? extends PropertyContext> propertyContextMap(Field field) {
         return this.propertyContextHandlers.entrySet().stream()
                 .flatMap(e -> e.getValue()
+                        .get()
                         .createContext(field)
                         .map(c -> Stream.of(Map.entry(e.getKey(), c)))
                         .orElseGet(Stream::of))

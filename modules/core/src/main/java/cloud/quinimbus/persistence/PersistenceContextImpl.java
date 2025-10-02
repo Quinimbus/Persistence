@@ -1,6 +1,6 @@
 package cloud.quinimbus.persistence;
 
-import cloud.quinimbus.common.annotations.Provider;
+import cloud.quinimbus.common.tools.ProviderLoader;
 import cloud.quinimbus.config.api.ConfigNode;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
@@ -14,7 +14,6 @@ import cloud.quinimbus.persistence.api.entity.UnparseableValueException;
 import cloud.quinimbus.persistence.api.lifecycle.LifecycleEvent;
 import cloud.quinimbus.persistence.api.records.RecordEntityRegistry;
 import cloud.quinimbus.persistence.api.schema.EntityType;
-import cloud.quinimbus.persistence.api.schema.EntityTypeMigration;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import cloud.quinimbus.persistence.api.schema.PersistenceSchemaProvider;
@@ -46,18 +45,18 @@ import cloud.quinimbus.persistence.parsers.ValueParser;
 import cloud.quinimbus.persistence.schema.json.SingleJsonSchemaProvider;
 import cloud.quinimbus.persistence.schema.record.RecordSchemaProvider;
 import cloud.quinimbus.persistence.storage.inmemory.InMemorySchemaStorage;
+import cloud.quinimbus.tools.function.LazySingletonSupplier;
+import cloud.quinimbus.tools.lang.TypeRef;
 import cloud.quinimbus.tools.throwing.ThrowingOptional;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -71,64 +70,39 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     private final Map<String, PersistenceSchemaStorage> schemaStorages;
 
-    private final Map<String, PersistenceSchemaProvider> schemaProviders;
+    private final Map<String, LazySingletonSupplier<PersistenceSchemaProvider>> schemaProviders;
 
-    private final Map<String, PersistenceStorageProvider<? extends PersistenceSchemaStorage>> schemaStorageProviders;
+    private final Map<String, LazySingletonSupplier<PersistenceStorageProvider<? extends PersistenceSchemaStorage>>>
+            schemaStorageProviders;
 
     private final Map<String, List<EmbeddedPropertyHandler>> embeddedPropertyHandlers;
 
-    private final Map<String, IDGenerator> idGenerators;
+    private final Map<String, LazySingletonSupplier<IDGenerator>> idGenerators;
 
     private final Map<EntityType, IDGenerator> idGeneratorsPerType;
 
     public PersistenceContextImpl() {
         this.schemas = new LinkedHashMap<>();
         this.schemaStorages = new LinkedHashMap<>();
-        this.schemaProviders = new LinkedHashMap<>();
-        this.schemaStorageProviders = new LinkedHashMap<>();
+        this.schemaProviders = ProviderLoader.loadProviders(PersistenceSchemaProvider.class, ServiceLoader::load, true);
+        this.schemaStorageProviders = ProviderLoader.loadProviders(
+                new TypeRef<PersistenceStorageProvider<? extends PersistenceSchemaStorage>>() {},
+                ServiceLoader::load,
+                true);
         this.embeddedPropertyHandlers = new LinkedHashMap<>();
-        this.idGenerators = new LinkedHashMap<>();
+        this.idGenerators = ProviderLoader.loadProviders(IDGenerator.class, ServiceLoader::load, true);
         this.idGeneratorsPerType = new LinkedHashMap<>();
-        ServiceLoader.load(PersistenceSchemaProvider.class).forEach(sp -> {
-            var providerAnno = sp.getClass().getAnnotation(Provider.class);
-            if (providerAnno == null) {
-                throw new IllegalStateException("Schema provider %s is missing the @Provider annotation"
-                        .formatted(sp.getClass().getName()));
-            }
-            for (String a : providerAnno.alias()) {
-                this.schemaProviders.put(a, sp);
-            }
-        });
-        ServiceLoader.load(PersistenceStorageProvider.class).forEach(ssp -> {
-            var providerAnno = ssp.getClass().getAnnotation(Provider.class);
-            if (providerAnno == null) {
-                throw new IllegalStateException("Schema storage provider %s is missing the @Provider annotation"
-                        .formatted(ssp.getClass().getName()));
-            }
-            for (String a : providerAnno.alias()) {
-                this.schemaStorageProviders.put(a, ssp);
-            }
-        });
-        ServiceLoader.load(IDGenerator.class).forEach(idg -> {
-            var providerAnno = idg.getClass().getAnnotation(Provider.class);
-            if (providerAnno == null) {
-                throw new IllegalStateException("ID generator %s is missing the @Provider annotation"
-                        .formatted(idg.getClass().getName()));
-            }
-            for (String a : providerAnno.alias()) {
-                this.idGenerators.put(a, idg);
-            }
-        });
     }
 
     public <T extends PersistenceSchemaStorage> Optional<? extends PersistenceStorageProvider<T>> getStorageProvider(
             String alias) {
-        return Optional.ofNullable((PersistenceStorageProvider<T>) this.schemaStorageProviders.get(alias));
+        return Optional.ofNullable(this.schemaStorageProviders.get(alias))
+                .map(p -> (PersistenceStorageProvider<T>) p.get());
     }
 
     @Override
     public Optional<PersistenceSchemaProvider> getSchemaProvider(String alias) {
-        return Optional.ofNullable(this.schemaProviders.get(alias));
+        return Optional.ofNullable(this.schemaProviders.get(alias)).map(LazySingletonSupplier::get);
     }
 
     @Override
@@ -174,16 +148,21 @@ public class PersistenceContextImpl implements PersistenceContext {
     }
 
     @Override
-    public <K> Entity<K> newEntity(K id, EntityType type, Map<String, Object> properties, Map<String, Object> transientFields)
+    public <K> Entity<K> newEntity(
+            K id, EntityType type, Map<String, Object> properties, Map<String, Object> transientFields)
             throws UnparseableValueException {
         if (id == null) {
-            id = (K) this.generateID(type).orElseThrow(() -> new IllegalArgumentException("Entity id may not be null and no generator is set for the type %s".formatted(type.id())));
+            id = (K) this.generateID(type)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Entity id may not be null and no generator is set for the type %s".formatted(type.id())));
         }
         var typeProperties = type.properties().stream().collect(Collectors.toMap(pt -> pt.name(), pt -> pt));
         Map<String, Object> parsedProperties = ThrowingStream.of(
                         properties.entrySet().stream(), UnparseableValueException.class)
                 .filter(e -> typeProperties.containsKey(e.getKey()))
-                .map(e -> Map.entry(e.getKey(), Optional.ofNullable(this.parse(type, List.of(), typeProperties.get(e.getKey()), e))))
+                .map(e -> Map.entry(
+                        e.getKey(),
+                        Optional.ofNullable(this.parse(type, List.of(), typeProperties.get(e.getKey()), e))))
                 .filter(e -> e.getValue().isPresent())
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get()));
         return new DefaultEntity<>(id, type, parsedProperties, transientFields);
@@ -198,16 +177,23 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     @Override
     public EmbeddedObject newEmbedded(
-            EmbeddedPropertyType type, EntityType parentType, List<String> path, Map<String, Object> properties, Map<String, Object> transientFields)
+            EmbeddedPropertyType type,
+            EntityType parentType,
+            List<String> path,
+            Map<String, Object> properties,
+            Map<String, Object> transientFields)
             throws UnparseableValueException {
         var typeProperties = type.properties().stream().collect(Collectors.toMap(pt -> pt.name(), pt -> pt));
         Map<String, Object> parsedProperties = ThrowingStream.of(
                         properties.entrySet().stream(), UnparseableValueException.class)
                 .filter(e -> typeProperties.containsKey(e.getKey()))
-                .map(e -> Map.entry(e.getKey(), Optional.ofNullable(this.parse(parentType, path, typeProperties.get(e.getKey()), e))))
+                .map(e -> Map.entry(
+                        e.getKey(),
+                        Optional.ofNullable(this.parse(parentType, path, typeProperties.get(e.getKey()), e))))
                 .filter(e -> e.getValue().isPresent())
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get()));
-        return new DefaultEmbeddedObject(path.toArray(new String[] {}), parentType, parsedProperties, transientFields, type);
+        return new DefaultEmbeddedObject(
+                path.toArray(String[]::new), parentType, parsedProperties, transientFields, type);
     }
 
     @Override
@@ -240,16 +226,21 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     private Schema importSchema(Schema schema) throws InvalidSchemaException {
         schemas.put(schema.id(), schema);
-        var handlers = schema.entityTypes().values().stream().flatMap(t -> this.importEmbeddableSchemaHandlers(schema.id(), t)).toList();
+        var handlers = schema.entityTypes().values().stream()
+                .flatMap(t -> this.importEmbeddableSchemaHandlers(schema.id(), t))
+                .toList();
         this.embeddedPropertyHandlers.put(schema.id(), handlers);
-        ThrowingStream.of(schema.entityTypes().values().stream(), InvalidSchemaException.class).filter(e -> e.idGenerator().isPresent()).forEach(e -> {
-            var generator = this.idGenerators.get(e.idGenerator().get());
-            if (generator != null) {
-                this.idGeneratorsPerType.put(e, generator);
-            } else {
-                throw new InvalidSchemaException("ID generator %s not found".formatted(e.idGenerator().get()));
-            }
-        });
+        ThrowingStream.of(schema.entityTypes().values().stream(), InvalidSchemaException.class)
+                .filter(e -> e.idGenerator().isPresent())
+                .forEach(e -> {
+                    var generator = this.idGenerators.get(e.idGenerator().get()).get();
+                    if (generator != null) {
+                        this.idGeneratorsPerType.put(e, generator);
+                    } else {
+                        throw new InvalidSchemaException("ID generator %s not found"
+                                .formatted(e.idGenerator().get()));
+                    }
+                });
         return schema;
     }
 
@@ -257,24 +248,24 @@ public class PersistenceContextImpl implements PersistenceContext {
         return type.properties().stream().flatMap(p -> this.importEmbeddedSchemaHandler(schema, type, p));
     }
 
-    private Stream<EmbeddedPropertyHandler> importEmbeddedSchemaHandler(String schema, EntityType type, EntityTypeProperty pt) throws IllegalStateException, IllegalArgumentException {
-        if (pt.type() instanceof EmbeddedPropertyType(Set<EntityTypeProperty> properties, Set<EntityTypeMigration> migrations, Class<? extends EmbeddedPropertyHandler> handlerClass)) {
-            if (handlerClass != null) {
-                try {
-                    var handler = handlerClass.getConstructor(PersistenceContext.class, String.class, String.class, String.class)
-                            .newInstance(this, schema, type.id(), pt.name());
-                    return Stream.of(handler);
-                } catch (NoSuchMethodException ex) {
-                    throw new IllegalArgumentException(
-                            "Cannot find a suitable constructor for %s".formatted(handlerClass.getSimpleName()),
-                            ex);
-                } catch (SecurityException
-                        | InstantiationException
-                        | IllegalAccessException
-                        | InvocationTargetException ex) {
-                    throw new IllegalStateException(
-                            "Cannot call the constructor of %s".formatted(handlerClass.getSimpleName()), ex);
-                }
+    private Stream<EmbeddedPropertyHandler> importEmbeddedSchemaHandler(
+            String schema, EntityType type, EntityTypeProperty pt)
+            throws IllegalStateException, IllegalArgumentException {
+        if (pt.type() instanceof EmbeddedPropertyType(var _, var _, var handlerClass) && handlerClass != null) {
+            try {
+                var handler = handlerClass
+                        .getConstructor(PersistenceContext.class, String.class, String.class, String.class)
+                        .newInstance(this, schema, type.id(), pt.name());
+                return Stream.of(handler);
+            } catch (NoSuchMethodException ex) {
+                throw new IllegalArgumentException(
+                        "Cannot find a suitable constructor for %s".formatted(handlerClass.getSimpleName()), ex);
+            } catch (SecurityException
+                    | InstantiationException
+                    | IllegalAccessException
+                    | InvocationTargetException ex) {
+                throw new IllegalStateException(
+                        "Cannot call the constructor of %s".formatted(handlerClass.getSimpleName()), ex);
             }
         }
         return Stream.empty();
@@ -341,25 +332,21 @@ public class PersistenceContextImpl implements PersistenceContext {
 
     private ValueParser getParser(EntityType parentType, List<String> parentPath, EntityTypeProperty property) {
         var type = property.type();
-        if (type instanceof StringPropertyType) {
-            return new StringParser();
-        } else if (type instanceof BooleanPropertyType) {
-            return new BooleanParser();
-        } else if (type instanceof TimestampPropertyType) {
-            return new TimestampParser();
-        } else if (type instanceof LocalDatePropertyType) {
-            return new LocalDateParser();
-        } else if (type instanceof EnumPropertyType ept) {
-            return new EnumParser(ept.allowedValues());
-        } else if (type instanceof IntegerPropertyType) {
-            return new IntegerParser();
-        } else if (type instanceof EmbeddedPropertyType ept) {
-            var newParentPath = new ArrayList<>(parentPath);
-            newParentPath.add(property.name());
-            return new EmbeddedParser(ept, newParentPath, parentType, this);
-        } else {
-            throw new IllegalStateException(); // Cannot happen
-        }
+        return switch (type) {
+            case StringPropertyType _ -> new StringParser();
+            case BooleanPropertyType _ -> new BooleanParser();
+            case TimestampPropertyType _ -> new TimestampParser();
+            case LocalDatePropertyType _ -> new LocalDateParser();
+            case EnumPropertyType ept -> new EnumParser(ept.allowedValues());
+            case IntegerPropertyType _ -> new IntegerParser();
+            case EmbeddedPropertyType ept ->
+                new EmbeddedParser(
+                        ept,
+                        Stream.concat(parentPath.stream(), Stream.of(property.name()))
+                                .toList(),
+                        parentType,
+                        this);
+        };
     }
 
     @Override
@@ -370,7 +357,7 @@ public class PersistenceContextImpl implements PersistenceContext {
     @Override
     @Deprecated
     public RecordEntityRegistry getRecordEntityRegistry() {
-        return ((RecordSchemaProvider) this.schemaProviders.get("record")).getRecordEntityRegistry();
+        return ((RecordSchemaProvider) this.schemaProviders.get("record").get()).getRecordEntityRegistry();
     }
 
     @Override

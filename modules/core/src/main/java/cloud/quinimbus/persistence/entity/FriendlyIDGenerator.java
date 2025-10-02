@@ -4,7 +4,7 @@ import cloud.quinimbus.common.annotations.Provider;
 import cloud.quinimbus.persistence.api.entity.IDGenerator;
 import com.devskiller.friendly_id.FriendlyId;
 
-@Provider(name = "ID generator using friendly IDs", alias = "friendly")
+@Provider(id = "friendly", name = "ID generator using friendly IDs")
 public class FriendlyIDGenerator implements IDGenerator<String> {
 
     @Override

@@ -9,7 +9,7 @@ import com.mongodb.client.MongoClients;
 import java.util.Map;
 import java.util.Optional;
 
-@Provider(name = "MongoDB storage provider", alias = "mongo", priority = 0)
+@Provider(id = "mongo", name = "MongoDB storage provider", priority = 0)
 public class MongoPersistenceStorageProvider implements PersistenceStorageProvider<MongoSchemaStorage> {
 
     public MongoSchemaStorage createSchema(
