@@ -19,7 +19,7 @@
     
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>24</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <record.builder.version>51</record.builder.version>
     </properties>
     
@@ -74,7 +74,7 @@
                 <configuration>
                     <java>
                         <palantirJavaFormat>
-                            <version>2.74.0</version>
+                            <version>2.81.0</version>
                             <style>PALANTIR</style>
                         </palantirJavaFormat>
                     </java>
