@@ -5,6 +5,8 @@ import static cloud.quinimbus.persistence.api.schema.EntityTypeProperty.Structur
 import static cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.MissingMappingOperation.KEEP;
 import static cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.MissingMappingOperation.SET_TO_NULL;
 import static cloud.quinimbus.persistence.storage.mongo.Documents.*;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
 
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.schema.EntityType;
@@ -21,6 +23,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.bson.BsonType;
+import org.bson.conversions.Bson;
 
 public class MongoSchemaStorageMigrator implements PersistenceSchemaStorageMigrator {
 
