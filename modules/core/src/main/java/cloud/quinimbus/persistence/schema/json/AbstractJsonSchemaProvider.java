@@ -42,7 +42,8 @@ import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 public abstract class AbstractJsonSchemaProvider implements PersistenceSchemaProvider {
 
     public static record EntityTypeMixin(
-            @JsonIgnore Set<EntityTypeProperty> properties, @JsonIgnore Set<EntityTypeMigration> migrations) {}
+            @JsonIgnore Set<EntityTypeProperty> properties,
+            @JsonIgnore Set<EntityTypeMigration> migrations) {}
 
     protected Map<String, EntityType> importTypes(ObjectMapper mapper, JsonNode node) throws IOException {
         return ThrowingStream.of(

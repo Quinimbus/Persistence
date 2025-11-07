@@ -5,12 +5,12 @@ import cloud.quinimbus.config.cdi.ConfigPath;
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
-import java.util.ServiceLoader;
-import java.util.stream.Stream;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
+import java.util.ServiceLoader;
+import java.util.stream.Stream;
 import name.falgout.jeffrey.throwing.stream.ThrowingStream;
 
 @ApplicationScoped

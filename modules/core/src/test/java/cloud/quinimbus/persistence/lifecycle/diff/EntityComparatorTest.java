@@ -1,5 +1,7 @@
 package cloud.quinimbus.persistence.lifecycle.diff;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import cloud.quinimbus.persistence.api.schema.EntityTypeBuilder;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
@@ -8,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class EntityComparatorTest {
 

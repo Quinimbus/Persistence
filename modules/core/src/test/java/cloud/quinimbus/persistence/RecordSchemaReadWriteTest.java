@@ -1,6 +1,5 @@
 package cloud.quinimbus.persistence;
 
-import cloud.quinimbus.persistence.api.PersistenceContext;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cloud.quinimbus.persistence.api.annotation.Embeddable;
@@ -49,7 +48,9 @@ public class RecordSchemaReadWriteTest {
             @EntityField(type = Integer.class) Map<String, Integer> ratings) {}
 
     public static record EntityWithTransientField(
-            @EntityIdField String id, String includedField, @EntityTransientField AtomicBoolean ignoredField) {}
+            @EntityIdField String id,
+            String includedField,
+            @EntityTransientField AtomicBoolean ignoredField) {}
 
     @Embeddable
     public static record EmbeddedEntityWithTransientField(
@@ -60,7 +61,8 @@ public class RecordSchemaReadWriteTest {
 
     @Entity(schema = @Schema(id = "generate-id-test", version = 1L))
     public static record EntityWithGeneratedId(
-            @EntityIdField(generate = @GenerateID(generate = true, generator = "uuid")) String id) {}
+            @EntityIdField(generate = @GenerateID(generate = true, generator = "uuid"))
+            String id) {}
 
     @Test
     public void testReaderAndWriter()

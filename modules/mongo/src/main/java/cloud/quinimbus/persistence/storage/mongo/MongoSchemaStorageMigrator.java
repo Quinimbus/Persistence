@@ -1,29 +1,26 @@
 package cloud.quinimbus.persistence.storage.mongo;
 
+import static cloud.quinimbus.persistence.api.schema.EntityTypeProperty.Structure.LIST;
+import static cloud.quinimbus.persistence.api.schema.EntityTypeProperty.Structure.SINGLE;
+import static cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.MissingMappingOperation.KEEP;
+import static cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.MissingMappingOperation.SET_TO_NULL;
+import static cloud.quinimbus.persistence.storage.mongo.Documents.*;
+
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.schema.EntityType;
 import cloud.quinimbus.persistence.api.schema.EntityTypeProperty;
-import static cloud.quinimbus.persistence.api.schema.EntityTypeProperty.Structure.LIST;
-import static cloud.quinimbus.persistence.api.schema.EntityTypeProperty.Structure.SINGLE;
 import cloud.quinimbus.persistence.api.schema.StructuredObjectType;
 import cloud.quinimbus.persistence.api.schema.migrations.PropertyAddMigrationType;
 import cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType;
 import cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.Mapping;
-import static cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.MissingMappingOperation.KEEP;
-import static cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.MissingMappingOperation.SET_TO_NULL;
 import cloud.quinimbus.persistence.api.schema.properties.EmbeddedPropertyType;
 import cloud.quinimbus.persistence.api.storage.PersistenceSchemaStorageMigrator;
-import static cloud.quinimbus.persistence.storage.mongo.Documents.*;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.bson.BsonType;
-import org.bson.conversions.Bson;
 
 public class MongoSchemaStorageMigrator implements PersistenceSchemaStorageMigrator {
 
@@ -69,9 +66,10 @@ public class MongoSchemaStorageMigrator implements PersistenceSchemaStorageMigra
                 switch (property.structure()) {
                     case SINGLE -> "$%s".formatted(field);
                     case LIST -> "$$x";
-                    default -> throw new PersistenceException(
-                            "Fields of structure type %s not supported for mapping migration in Mongo storage"
-                                    .formatted(property.structure().name()));
+                    default ->
+                        throw new PersistenceException(
+                                "Fields of structure type %s not supported for mapping migration in Mongo storage"
+                                        .formatted(property.structure().name()));
                 };
         var inputExpr = cond(isNumber(fieldSelector)).then(toStr(fieldSelector)).orElse(fieldSelector);
         var reducedValue = reduceFirstMatch(
@@ -86,9 +84,10 @@ public class MongoSchemaStorageMigrator implements PersistenceSchemaStorageMigra
                 switch (property.structure()) {
                     case SINGLE -> reducedValue;
                     case LIST -> map("$%s".formatted(pvmmt.field()), "x", reducedValue);
-                    default -> throw new PersistenceException(
-                            "Fields of structure type %s not supported for mapping migration in Mongo storage"
-                                    .formatted(property.structure().name()));
+                    default ->
+                        throw new PersistenceException(
+                                "Fields of structure type %s not supported for mapping migration in Mongo storage"
+                                        .formatted(property.structure().name()));
                 });
         var filter = or(type(field, BsonType.STRING), type(field, BsonType.ARRAY), type(field, "number"));
         System.out.println("[runPropertyValueMappingMigrationType] %s - %s - %s - pipeline: %s"

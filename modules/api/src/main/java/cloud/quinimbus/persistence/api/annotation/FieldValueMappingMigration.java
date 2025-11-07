@@ -53,7 +53,8 @@ public @interface FieldValueMappingMigration {
 
     /// The possible operations to do if no mapping matches the old value.
     ///
-    /// @see cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.MissingMappingOperation
+    /// @see
+    /// cloud.quinimbus.persistence.api.schema.migrations.PropertyValueMappingMigrationType.MissingMappingOperation
     public static enum MissingMappingOperation {
         /// Keep the old value of the entity.
         KEEP,

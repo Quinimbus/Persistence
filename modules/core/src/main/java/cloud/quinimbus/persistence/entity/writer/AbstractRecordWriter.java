@@ -82,12 +82,13 @@ public class AbstractRecordWriter<T extends Record> {
             try {
                 var targetClass =
                         switch (t.structure()) {
-                            case SINGLE -> (Class<Record>)
-                                    recordClass.getMethod(t.name()).getReturnType();
-                            case LIST, SET, MAP -> (Class<Record>) recordClass
-                                    .getDeclaredField(t.name())
-                                    .getAnnotation(EntityField.class)
-                                    .type();
+                            case SINGLE ->
+                                (Class<Record>) recordClass.getMethod(t.name()).getReturnType();
+                            case LIST, SET, MAP ->
+                                (Class<Record>) recordClass
+                                        .getDeclaredField(t.name())
+                                        .getAnnotation(EntityField.class)
+                                        .type();
                         };
                 var writer = new EmbeddedRecordWriter<Record>(targetClass, ept);
                 return switch (t.structure()) {
@@ -104,12 +105,13 @@ public class AbstractRecordWriter<T extends Record> {
             try {
                 var targetClass =
                         switch (t.structure()) {
-                            case SINGLE -> (Class<Record>)
-                                    recordClass.getMethod(t.name()).getReturnType();
-                            case LIST, SET, MAP -> (Class<Record>) recordClass
-                                    .getDeclaredField(t.name())
-                                    .getAnnotation(EntityField.class)
-                                    .type();
+                            case SINGLE ->
+                                (Class<Record>) recordClass.getMethod(t.name()).getReturnType();
+                            case LIST, SET, MAP ->
+                                (Class<Record>) recordClass
+                                        .getDeclaredField(t.name())
+                                        .getAnnotation(EntityField.class)
+                                        .type();
                         };
                 var valueOfMethod = targetClass.getMethod("valueOf", String.class);
                 Function<Object, Object> writer = v -> {

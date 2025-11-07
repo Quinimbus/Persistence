@@ -65,9 +65,10 @@ public class InMemorySchemaStorageMigrator implements PersistenceSchemaStorageMi
                         setProperty(e, pvmmt.field(), path, newValues);
                     }
                 }
-                default -> throw new PersistenceException(
-                        "Fields of structure type %s not supported for mapping migration in InMemory storage"
-                                .formatted(property.structure().name()));
+                default ->
+                    throw new PersistenceException(
+                            "Fields of structure type %s not supported for mapping migration in InMemory storage"
+                                    .formatted(property.structure().name()));
             }
         }
     }
@@ -135,8 +136,9 @@ public class InMemorySchemaStorageMigrator implements PersistenceSchemaStorageMi
             case null -> null;
             case String s -> s;
             case Number n -> n.toString();
-            default -> throw new IllegalArgumentException(
-                    "Cannot read %s as string".formatted(value.getClass().getName()));
+            default ->
+                throw new IllegalArgumentException(
+                        "Cannot read %s as string".formatted(value.getClass().getName()));
         };
     }
 
@@ -144,17 +146,20 @@ public class InMemorySchemaStorageMigrator implements PersistenceSchemaStorageMi
         var value = getProperty(entity, field, path);
         return switch (value) {
             case null -> null;
-            case List<?> list -> list.stream()
-                    .map(e -> switch (e) {
-                        case null -> null;
-                        case String s -> s;
-                        case Number n -> n.toString();
-                        default -> throw new IllegalArgumentException("Cannot read %s as string"
-                                .formatted(e.getClass().getName()));
-                    })
-                    .toList();
-            default -> throw new IllegalArgumentException(
-                    "Cannot read %s as string list".formatted(value.getClass().getName()));
+            case List<?> list ->
+                list.stream()
+                        .map(e -> switch (e) {
+                            case null -> null;
+                            case String s -> s;
+                            case Number n -> n.toString();
+                            default ->
+                                throw new IllegalArgumentException("Cannot read %s as string"
+                                        .formatted(e.getClass().getName()));
+                        })
+                        .toList();
+            default ->
+                throw new IllegalArgumentException("Cannot read %s as string list"
+                        .formatted(value.getClass().getName()));
         };
     }
 
@@ -162,16 +167,19 @@ public class InMemorySchemaStorageMigrator implements PersistenceSchemaStorageMi
         var value = getProperty(entity, field, path);
         return switch (value) {
             case null -> null;
-            case Set<?> set -> set.stream()
-                    .map(e -> switch (e) {
-                        case String s -> s;
-                        case Number n -> n.toString();
-                        default -> throw new IllegalArgumentException("Cannot read %s as string"
-                                .formatted(e.getClass().getName()));
-                    })
-                    .collect(Collectors.toSet());
-            default -> throw new IllegalArgumentException(
-                    "Cannot read %s as string set".formatted(value.getClass().getName()));
+            case Set<?> set ->
+                set.stream()
+                        .map(e -> switch (e) {
+                            case String s -> s;
+                            case Number n -> n.toString();
+                            default ->
+                                throw new IllegalArgumentException("Cannot read %s as string"
+                                        .formatted(e.getClass().getName()));
+                        })
+                        .collect(Collectors.toSet());
+            default ->
+                throw new IllegalArgumentException("Cannot read %s as string set"
+                        .formatted(value.getClass().getName()));
         };
     }
 

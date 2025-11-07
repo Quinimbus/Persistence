@@ -23,7 +23,7 @@ public class AbstractRecordReader<T extends Record> {
     private final Map<String, Method> propertyFieldGetters;
 
     private final Map<String, Function<Object, Object>> propertyFieldValueReaders;
-    
+
     private final Map<String, Method> transientFieldGetters;
 
     public AbstractRecordReader(EntityType type, Set<EntityTypeProperty> properties, Class<T> recordClass)
@@ -67,12 +67,13 @@ public class AbstractRecordReader<T extends Record> {
             try {
                 var targetClass =
                         switch (t.structure()) {
-                            case SINGLE -> (Class<Record>)
-                                    recordClass.getMethod(t.name()).getReturnType();
-                            case LIST, SET, MAP -> (Class<Record>) recordClass
-                                    .getDeclaredField(t.name())
-                                    .getAnnotation(EntityField.class)
-                                    .type();
+                            case SINGLE ->
+                                (Class<Record>) recordClass.getMethod(t.name()).getReturnType();
+                            case LIST, SET, MAP ->
+                                (Class<Record>) recordClass
+                                        .getDeclaredField(t.name())
+                                        .getAnnotation(EntityField.class)
+                                        .type();
                         };
                 var reader = new EmbeddedRecordReader(ept, targetClass, List.of(t.name()), type);
                 return switch (t.structure()) {

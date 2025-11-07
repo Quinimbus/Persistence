@@ -1,5 +1,7 @@
 package cloud.quinimbus.persistence.repositories;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.annotation.Entity;
 import cloud.quinimbus.persistence.api.annotation.EntityIdField;
@@ -10,7 +12,6 @@ import cloud.quinimbus.persistence.api.schema.InvalidSchemaException;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,10 @@ public class CRUDRepositoryTest {
 
     @Entity(schema = @Schema(id = "crudblog", version = 1L))
     public static record BlogEntry(
-            @EntityIdField(generate = @GenerateID(generate = true, generator = "friendly")) String id, String title) {}
+            @EntityIdField(generate = @GenerateID(generate = true, generator = "friendly"))
+            String id,
+
+            String title) {}
 
     @EntityTypeClass(BlogEntry.class)
     public static interface BlogEntryRepository extends CRUDRepository<BlogEntry, String> {}

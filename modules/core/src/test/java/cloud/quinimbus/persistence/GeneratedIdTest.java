@@ -1,5 +1,7 @@
 package cloud.quinimbus.persistence;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import cloud.quinimbus.persistence.api.PersistenceContext;
 import cloud.quinimbus.persistence.api.PersistenceException;
 import cloud.quinimbus.persistence.api.schema.EntityType;
@@ -9,7 +11,6 @@ import cloud.quinimbus.persistence.api.schema.Schema;
 import cloud.quinimbus.persistence.api.schema.SchemaBuilder;
 import cloud.quinimbus.persistence.api.schema.properties.StringPropertyType;
 import cloud.quinimbus.persistence.util.FunctionalSchemaProvider;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 public class GeneratedIdTest {

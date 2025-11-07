@@ -13,8 +13,8 @@ public interface PersistenceSchemaStorageMigrator {
             throws PersistenceException {
         switch (migration.type()) {
             case PropertyAddMigrationType pamt -> runPropertyAddMigration(entityType, pamt, path);
-            case PropertyValueMappingMigrationType pvmmt -> runPropertyValueMappingMigrationType(
-                    entityType, pvmmt, path);
+            case PropertyValueMappingMigrationType pvmmt ->
+                runPropertyValueMappingMigrationType(entityType, pvmmt, path);
         }
     }
 
