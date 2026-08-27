@@ -15,7 +15,7 @@ jobs:
           mongodb-version: 5.0
           mongodb-username: mongoroot
           mongodb-password: mongorootpassword
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
